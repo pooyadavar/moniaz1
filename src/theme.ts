@@ -2,124 +2,115 @@ import { createTheme } from '@mui/material/styles';
 
 declare module '@mui/material/styles' {
   interface Palette {
-    gray: { main: string; light: string; dark: string; };
-    yellow: { main: string; };
-    glass: { main: string; border: string; };
+    navy: { main: string; dark: string };
+    gray: { main: string; light: string; dark: string };
   }
   interface PaletteOptions {
-    gray?: { main?: string; light?: string; dark?: string; };
-    yellow?: { main?: string; };
-    glass?: { main?: string; border?: string; };
+    navy?: { main?: string; dark?: string };
+    gray?: { main?: string; light?: string; dark?: string };
   }
 }
 
 const theme = createTheme({
-  direction: 'ltr',
+  direction: 'rtl',
   palette: {
-    mode: 'dark',
+    mode: 'light',
     primary: {
-      main: '#a855f7', // Modern purple
-      light: '#d8b4fe',
-      dark: '#7e22ce',
+      main: '#0072BC',
+      light: '#4da3ff',
+      dark: '#004572',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#ec4899', // Pink accent
+      main: '#1e4a8c',
+      contrastText: '#ffffff',
+    },
+    navy: {
+      main: '#0c2d6b',
+      dark: '#071a3f',
     },
     background: {
-      default: 'transparent',
-      paper: 'rgba(255, 255, 255, 0.03)',
+      default: '#d1d4d8',
+      paper: '#e4e4e4',
+    },
+    text: {
+      primary: '#1a2b42',
+      secondary: '#5c6b7a',
     },
     gray: {
-      main: '#9ca3af',
-      light: '#f3f4f6',
-      dark: '#4b5563',
+      main: '#6b7c8f',
+      light: '#f1f5f9',
+      dark: '#334155',
     },
-    yellow: {
-      main: '#fde047',
+    success: {
+      main: '#28a745',
+      dark: '#1e7e34',
     },
-    glass: {
-      main: 'rgba(255, 255, 255, 0.05)',
-      border: 'rgba(255, 255, 255, 0.1)',
-    }
+    warning: {
+      main: '#ffc107',
+    },
   },
   shape: {
-    borderRadius: 24,
+    borderRadius: 8,
   },
   typography: {
-    fontFamily: "'Vazirmatn', 'IRANSans', system-ui, -apple-system, sans-serif",
-    button: {
-      textTransform: 'none',
-      fontWeight: 700,
-    },
+    fontFamily: "'Vazirmatn', 'IRANSans', Tahoma, system-ui, sans-serif",
+    h3: { fontWeight: 800, color: '#1a2b42' },
+    h6: { fontWeight: 700 },
+    button: { textTransform: 'none', fontWeight: 700 },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          background: 'radial-gradient(circle at top left, #2a0845, #140d21 40%, #0f1016 100%)',
+          background:
+            'linear-gradient(180deg, #e8f2fc 0%, #f8fbff 35%, #ffffff 100%)',
           backgroundAttachment: 'fixed',
           minHeight: '100vh',
-        },
-        '::-webkit-scrollbar': {
-          width: '8px',
-          height: '8px',
-        },
-        '::-webkit-scrollbar-track': {
-          background: 'rgba(0, 0, 0, 0.1)',
-        },
-        '::-webkit-scrollbar-thumb': {
-          background: 'rgba(255, 255, 255, 0.2)',
-          borderRadius: '4px',
-        },
-        '::-webkit-scrollbar-thumb:hover': {
-          background: 'rgba(255, 255, 255, 0.3)',
         },
       },
     },
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: '100px',
+          borderRadius: 8,
           boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 0 20px rgba(168, 85, 247, 0.4)',
-          },
         },
         contained: {
-          background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-          color: '#fff',
-        }
+          backgroundColor: '#007bff',
+          '&:hover': {
+            backgroundColor: '#0056b3',
+            boxShadow: '0 4px 12px rgba(0, 123, 255, 0.35)',
+          },
+        },
+        outlined: {
+          borderColor: '#007bff',
+          color: '#007bff',
+          '&:hover': {
+            borderColor: '#0056b3',
+            backgroundColor: 'rgba(0, 123, 255, 0.06)',
+          },
+        },
       },
     },
     MuiTextField: {
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.3s ease',
-            '& fieldset': {
-              borderColor: 'rgba(255, 255, 255, 0.1)',
-            },
-            '&:hover fieldset': {
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: '#a855f7',
-              borderWidth: '2px',
-            },
+            borderRadius: 8,
+            backgroundColor: '#fff',
+            '& fieldset': { borderColor: '#d0dde8' },
+            '&:hover fieldset': { borderColor: '#007bff' },
+            '&.Mui-focused fieldset': { borderColor: '#007bff', borderWidth: 2 },
           },
         },
       },
     },
-    MuiPaper: {
+    MuiAccordion: {
       styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-        }
-      }
-    }
+        root: { '&:before': { display: 'none' } },
+      },
+    },
   },
 });
 

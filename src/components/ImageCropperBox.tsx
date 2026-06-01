@@ -23,18 +23,14 @@ const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave, initialCrop })
 
   const handleSave = () => {
     if (!completedCrop || !imageRef.current) return;
-
     const canvas = document.createElement('canvas');
     const image = imageRef.current;
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    
     canvas.width = completedCrop.width;
     canvas.height = completedCrop.height;
-    
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
     ctx.drawImage(
       image,
       completedCrop.x * scaleX,
@@ -44,73 +40,40 @@ const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave, initialCrop })
       0,
       0,
       completedCrop.width,
-      completedCrop.height
+      completedCrop.height,
     );
-
-    const base64Image = canvas.toDataURL('image/jpeg');
-    onCropSave(base64Image);
+    onCropSave(canvas.toDataURL('image/jpeg'));
   };
 
   return (
-    <Box className="glass" sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2, mt: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Box sx={{ p: 1, borderRadius: '12px', background: 'rgba(236, 72, 153, 0.1)', display: 'flex' }}>
-          <CropIcon sx={{ color: '#ec4899' }} />
-        </Box>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>
-          برش عکس سوال
-        </Typography>
+    <Box className="moniaz-card" sx={{ p: 2.5, mt: 1, border: '2px solid #c5ddf5' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+        <CropIcon sx={{ color: 'primary.main' }} />
+        <Typography sx={{ fontWeight: 700 }}>ویرایش محدوده برش</Typography>
       </Box>
-
-      <Typography sx={{ color: 'gray.main', fontSize: '0.95rem' }}>
-        اگر جمینای بخش تصویری سوال را اشتباه تشخیص داده، محدوده درست را انتخاب و ذخیره کنید.
-      </Typography>
-
-      <Box sx={{ 
-        background: 'rgba(0,0,0,0.2)', 
-        borderRadius: '16px', 
-        overflow: 'hidden',
-        display: 'flex', 
-        justifyContent: 'center',
-        alignItems: 'center',
-        maxHeight: '400px',
-        border: '1px solid rgba(255,255,255,0.05)'
-      }}>
-        <ReactCrop
-          crop={crop}
-          onChange={(_, percentCrop) => setCrop(percentCrop)}
-          onComplete={(c) => setCompletedCrop(c)}
-        >
-          <img 
-            ref={imageRef} 
-            src={imageSrc} 
-            alt="Upload" 
-            style={{ maxHeight: '400px', objectFit: 'contain' }} 
-            crossOrigin="anonymous"
-          />
+      <Box
+        sx={{
+          bgcolor: '#f4f8fc',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          display: 'flex',
+          justifyContent: 'center',
+          maxHeight: 400,
+          border: '1px solid #d0dde8',
+        }}
+      >
+        <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)}>
+          <img ref={imageRef} src={imageSrc} alt="" style={{ maxHeight: 400, objectFit: 'contain' }} />
         </ReactCrop>
       </Box>
-
       <Button
         variant="contained"
         disabled={!completedCrop || completedCrop.width === 0}
         onClick={handleSave}
-        sx={{
-          borderRadius: "100px",
-          py: 1.5,
-          fontWeight: 700,
-          background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)',
-          '&:hover': {
-             background: 'linear-gradient(135deg, #be185d 0%, #9f1239 100%)',
-          },
-          '&:disabled': {
-             background: 'rgba(255,255,255,0.05)',
-             color: 'rgba(255,255,255,0.3)'
-          }
-        }}
+        sx={{ mt: 2 }}
       >
-        <ContentCutIcon sx={{ ml: 1, fontSize: '1.2rem' }} />
-        ذخیره بخش انتخاب شده
+        <ContentCutIcon sx={{ ml: 1 }} />
+        ذخیره برش
       </Button>
     </Box>
   );

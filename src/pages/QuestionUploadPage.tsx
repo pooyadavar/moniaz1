@@ -1,249 +1,170 @@
-import React, { useState } from "react";
-import { Box, Container, Typography, Fade } from "@mui/material";
-import type { Crop } from "react-image-crop";
-import ImageDropzone from "../components/ImageDropzone";
-import GeminiResultForm from "../components/GeminiResultForm";
-import ImageCropperBox from "../components/ImageCropperBox";
-
-interface ImageCropPercent {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface ExtractedData {
-  questionText?: string;
-  options?: string[];
-  correctOption?: number;
-  hasQuestionImage?: boolean;
-  questionImageCrop?: ImageCropPercent | null;
-}
-
-const toReactCrop = (crop?: ImageCropPercent | null): Crop | null => {
-  if (!crop) return null;
-
-  return {
-    unit: "%",
-    x: crop.x,
-    y: crop.y,
-    width: crop.width,
-    height: crop.height,
-  };
-};
-
-const cropImageFromPercent = (imageSrc: string, crop: ImageCropPercent): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => {
-      const canvas = document.createElement("canvas");
-      const x = Math.max(0, Math.min(100, crop.x));
-      const y = Math.max(0, Math.min(100, crop.y));
-      const width = Math.max(0, Math.min(100 - x, crop.width));
-      const height = Math.max(0, Math.min(100 - y, crop.height));
-      const sourceX = (x / 100) * image.naturalWidth;
-      const sourceY = (y / 100) * image.naturalHeight;
-      const sourceWidth = (width / 100) * image.naturalWidth;
-      const sourceHeight = (height / 100) * image.naturalHeight;
-
-      canvas.width = Math.max(1, sourceWidth);
-      canvas.height = Math.max(1, sourceHeight);
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Canvas context is not available."));
-        return;
-      }
-
-      ctx.drawImage(
-        image,
-        sourceX,
-        sourceY,
-        sourceWidth,
-        sourceHeight,
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
-
-      resolve(canvas.toDataURL("image/jpeg"));
-    };
-    image.onerror = () => reject(new Error("Image could not be loaded for cropping."));
-    image.src = imageSrc;
-  });
-};
+import React, { useCallback, useEffect, useState } from "react";
+import { Box, Container, Typography } from "@mui/material";
+import MediaDropzone from "../components/MediaDropzone";
+import QuestionsAccordionPanel from "../components/QuestionsAccordionPanel";
+import type { ExtractedQuestion, PagePreview, QuestionDraft } from "../types/question";
+import { cropImageFromPercent } from "../utils/cropImage";
+import { filesToPages, revokePageUrls } from "../utils/mediaToPages";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
-const QuestionUploadPage: React.FC = () => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [geminiData, setGeminiData] = useState<ExtractedData | null>(null);
-  const [hasQuestionImage, setHasQuestionImage] = useState(false);
-  const [isCropEditorOpen, setIsCropEditorOpen] = useState(false);
+const createId = () => crypto.randomUUID();
 
-  // این تابع رو پیدا کن و با این کد جایگزین کن
-  const handleImageSelect = async (file: File) => {
-    const nextPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl(nextPreviewUrl);
-    setCroppedImageUrl(null); // ریست کردن کراپ قبلی
-    setGeminiData(null);
-    setHasQuestionImage(false);
-    setIsCropEditorOpen(false);
-    setIsExtracting(true); // لودینگ رو فعال می‌کنیم
+const getPageForQuestion = (pages: PagePreview[], pageIndex: number) =>
+  pages.find((p) => p.index === pageIndex) ?? pages[pageIndex];
+
+const buildQuestionDraft = async (
+  extracted: ExtractedQuestion,
+  pagePreviewUrl: string,
+): Promise<QuestionDraft> => {
+  let questionCroppedUrl: string | null = null;
+  const optionCroppedUrls: (string | null)[] = [null, null, null, null];
+
+  if (extracted.hasQuestionImage && extracted.questionImageCrop) {
+    questionCroppedUrl = await cropImageFromPercent(pagePreviewUrl, extracted.questionImageCrop);
+  }
+
+  await Promise.all(
+    extracted.options.map(async (option, index) => {
+      if (option.type === "image" && option.imageCrop) {
+        optionCroppedUrls[index] = await cropImageFromPercent(pagePreviewUrl, option.imageCrop);
+      }
+    }),
+  );
+
+  return {
+    ...extracted,
+    id: createId(),
+    questionCroppedUrl,
+    optionCroppedUrls,
+    cropEditorOpen: false,
+  };
+};
+
+const QuestionUploadPage: React.FC = () => {
+  const [pages, setPages] = useState<PagePreview[]>([]);
+  const [questions, setQuestions] = useState<QuestionDraft[]>([]);
+  const [expandedId, setExpandedId] = useState<string | false>(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => () => revokePageUrls(pages), [pages]);
+
+  const handleFilesSelect = async (files: File[]) => {
+    revokePageUrls(pages);
+    setQuestions([]);
+    setExpandedId(false);
+    try {
+      setPages(await filesToPages(files));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "خطا در پردازش فایل‌ها");
+    }
+  };
+
+  const handleExtract = async () => {
+    if (!pages.length) return;
+    setIsExtracting(true);
+    setQuestions([]);
+    setExpandedId(false);
 
     try {
-      // ۱. ساخت فرم‌دیتا برای ارسال فایل
       const formData = new FormData();
-      formData.append("image", file);
+      pages.forEach((page) => formData.append("files", page.file, page.file.name));
 
-      // ۲. ارسال ریکوئست به API اول (استخراج)
-      const response = await fetch(
-        `${API_BASE_URL}/api/questions/extract`,
-        {
-          method: "POST",
-          body: formData, // اینجا دیگه هدر Content-Type نمی‌ذاریم چون مرورگر خودش برای FormData تنظیمش می‌کنه
-        },
+      const response = await fetch(`${API_BASE_URL}/api/questions/extract`, {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+
+      if (!result.success) {
+        alert("خطا در استخراج: " + (result.error || "نامشخص"));
+        return;
+      }
+
+      const extractedList = (result.data?.questions || []) as ExtractedQuestion[];
+      if (!extractedList.length) {
+        alert("سوالی پیدا نشد.");
+        return;
+      }
+
+      const drafts = await Promise.all(
+        extractedList.map((item) => {
+          const page = getPageForQuestion(pages, item.pageIndex);
+          if (!page) throw new Error(`صفحه ${item.pageIndex + 1} یافت نشد.`);
+          return buildQuestionDraft(item, page.previewUrl);
+        }),
       );
 
-      const result = await response.json();
-
-      if (result.success) {
-        // دیتایی که جمینای برگردونده رو می‌ریزیم تو استیت تا فرم سمت چپ پر بشه
-        const extracted = result.data as ExtractedData;
-        setGeminiData(extracted);
-        setHasQuestionImage(Boolean(extracted.hasQuestionImage));
-
-        if (extracted.hasQuestionImage && extracted.questionImageCrop) {
-          const autoCroppedImage = await cropImageFromPercent(nextPreviewUrl, extracted.questionImageCrop);
-          setCroppedImageUrl(autoCroppedImage);
-          setIsCropEditorOpen(false);
-        } else if (extracted.hasQuestionImage) {
-          setIsCropEditorOpen(true);
-        } else {
-          setCroppedImageUrl(null);
-          setIsCropEditorOpen(false);
-        }
-      } else {
-        alert("خطا در استخراج: " + result.error);
-      }
+      setQuestions(drafts);
+      setExpandedId(drafts[0]?.id ?? false);
     } catch (error) {
-      console.error("Fetch Error:", error);
-      alert("ارتباط با سرور برقرار نشد!");
+      console.error(error);
+      alert(error instanceof Error ? error.message : "ارتباط با سرور برقرار نشد!");
     } finally {
-      setIsExtracting(false); // لودینگ رو خاموش می‌کنیم
+      setIsExtracting(false);
     }
   };
 
-  const handleCropSave = (croppedImg: string) => {
-    setCroppedImageUrl(croppedImg);
-    setHasQuestionImage(true);
-    setIsCropEditorOpen(false);
-  };
+  const handleQuestionChange = useCallback(
+    (id: string, updater: (q: QuestionDraft) => QuestionDraft) => {
+      setQuestions((cur) => cur.map((item) => (item.id === id ? updater(item) : item)));
+    },
+    [],
+  );
 
-  // این تابع رو پیدا کن و با این کد جایگزین کن
-  const handleSaveToDb = async (finalData: ExtractedData) => {
-    if (finalData.hasQuestionImage && !croppedImageUrl) {
-      alert("برای سوالی که عکس دارد، اول محدوده تصویر را ذخیره کنید.");
-      setIsCropEditorOpen(true);
-      return;
-    }
-
-    try {
-      // دیتای متنی رو با عکس کراپ شده ترکیب می‌کنیم
-      const payload = {
-        ...finalData,
-        questionImage: finalData.hasQuestionImage ? croppedImageUrl : null, // همون عکس Base64 که از کراپ اومده
-      };
-
-      // ارسال ریکوئست به API دوم (ذخیره)
-      const response = await fetch(`${API_BASE_URL}/api/questions/save`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert(`ایول! سوال ذخیره شد. آیدی سوال: ${result.questionId}`);
-        // اینجا می‌تونی فرم رو ریست کنی یا کاربر رو هدایت کنی
-      } else {
-        alert("خطا در ذخیره: " + result.error);
+  const handleSaveAll = async () => {
+    for (const q of questions) {
+      if (q.hasQuestionImage && !q.questionCroppedUrl) {
+        alert("برش تصویر صورت سوال را تکمیل کنید.");
+        setExpandedId(q.id);
+        return;
       }
-    } catch (error) {
-      console.error("Save Error:", error);
-      alert("ارتباط با سرور برای ذخیره برقرار نشد!");
+      if (q.options.some((o, i) => o.type === "image" && !q.optionCroppedUrls[i])) {
+        alert("برش گزینه تصویری را تکمیل کنید.");
+        setExpandedId(q.id);
+        return;
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/questions/save-batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questions: questions.map((q) => ({
+            questionText: q.questionText,
+            options: q.options.map((o) =>
+              o.type === "image" ? { type: "image", text: o.text } : { type: "text", text: o.text },
+            ),
+            correctOption: q.correctOption,
+            hasQuestionImage: q.hasQuestionImage,
+            questionImage: q.hasQuestionImage ? q.questionCroppedUrl : null,
+            optionImages: q.options.map((o, i) => (o.type === "image" ? q.optionCroppedUrls[i] : null)),
+          })),
+        }),
+      });
+      const result = await response.json();
+      alert(result.success ? result.message || "ذخیره شد." : "خطا: " + result.error);
+    } catch {
+      alert("خطا در ذخیره");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <Container
-      maxWidth="xl"
-      sx={{ mt: { xs: 4, md: 8 }, mb: 8, position: "relative", zIndex: 1 }}
-    >
-      {/* Background glowing orbs */}
-      <Box
-        sx={{
-          position: "fixed",
-          top: "20%",
-          left: "10%",
-          width: "300px",
-          height: "300px",
-          background:
-            "radial-gradient(circle, rgba(168,85,247,0.4) 0%, rgba(0,0,0,0) 70%)",
-          filter: "blur(40px)",
-          zIndex: -1,
-          borderRadius: "50%",
-        }}
-      />
-      <Box
-        sx={{
-          position: "fixed",
-          bottom: "10%",
-          right: "5%",
-          width: "400px",
-          height: "400px",
-          background:
-            "radial-gradient(circle, rgba(236,72,153,0.3) 0%, rgba(0,0,0,0) 70%)",
-          filter: "blur(60px)",
-          zIndex: -1,
-          borderRadius: "50%",
-        }}
-      />
-
-      <Fade in={true} timeout={800}>
-        <Box sx={{ textAlign: "center", mb: 6 }}>
-          <Typography
-            variant="h3"
-            component="h1"
-            sx={{
-              fontWeight: 500,
-              background: "linear-gradient(135deg, #fff 0%, #a855f7 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              mb: 2,
-            }}
-          >
-            افزودن سوال جدید با هوش مصنوعی
-          </Typography>
-          <Typography
-            sx={{
-              color: "gray.main",
-              maxWidth: "600px",
-              mx: "auto",
-              fontSize: "1.1rem",
-            }}
-          >
-            تصویر سوال خود را آپلود کنید تا هوش مصنوعی به صورت خودکار صورت سوال
-            و گزینه‌ها را برای شما استخراج کند.
-          </Typography>
-        </Box>
-      </Fade>
+    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
+      <Box sx={{ textAlign: "center", mb: 4 }}>
+        <Typography variant="h5" component="h3" sx={{ fontWeight: 600, color: "text.primary", mb: 1.5 }}>
+          افزودن سوال با هوش مصنوعی
+        </Typography>
+        <Typography sx={{ color: "text.secondary", maxWidth: 640, mx: "auto", fontSize: "0.75rem", lineHeight: 1.8 }}>
+          عکس یا PDF آپلود کنید. تشخیص تصویر صورت سوال و گزینه‌ها خودکار است و هر سوال در یک
+          آکاردئون جدا نمایش داده می‌شود.
+        </Typography>
+      </Box>
 
       <Box
         sx={{
@@ -253,61 +174,25 @@ const QuestionUploadPage: React.FC = () => {
           alignItems: "stretch",
         }}
       >
-        {/* سمت راست: آپلود تصویر */}
-        <Box
-          sx={{
-            flex: { xs: "1 1 auto", lg: "0 0 45%" },
-            display: "flex",
-            flexDirection: "column",
-            gap: 3,
-          }}
-        >
-          <Fade in={true} timeout={1000} style={{ transitionDelay: "200ms" }}>
-            <Box sx={{ flexGrow: 1 }}>
-              <ImageDropzone
-                onImageSelect={handleImageSelect}
-                selectedImage={previewUrl}
-                isLoading={isExtracting}
-              />
-            </Box>
-          </Fade>
-
-          {previewUrl && isCropEditorOpen && (
-            <Fade in={true} timeout={800}>
-              <Box>
-                <ImageCropperBox
-                  imageSrc={previewUrl}
-                  onCropSave={handleCropSave}
-                  initialCrop={toReactCrop(geminiData?.questionImageCrop)}
-                />
-              </Box>
-            </Fade>
-          )}
+        <Box sx={{ flex: { xs: "1 1 auto", lg: "0 0 42%" } }}>
+          <MediaDropzone
+            pages={pages}
+            onFilesSelect={handleFilesSelect}
+            onExtract={handleExtract}
+            isLoading={isExtracting}
+          />
         </Box>
 
-        {/* سمت چپ: فرم اطلاعات استخراج شده */}
-        <Box sx={{ flex: { xs: "1 1 auto", lg: "0 0 55%" }, width: "100%" }}>
-          <Fade in={true} timeout={1000} style={{ transitionDelay: "400ms" }}>
-            <Box sx={{ height: "100%" }}>
-              <GeminiResultForm
-                extractedData={geminiData}
-                onSave={handleSaveToDb}
-                croppedImageUrl={croppedImageUrl}
-                hasQuestionImage={hasQuestionImage}
-                onHasQuestionImageChange={(nextValue) => {
-                  setHasQuestionImage(nextValue);
-                  if (!nextValue) {
-                    setCroppedImageUrl(null);
-                    setIsCropEditorOpen(false);
-                    return;
-                  }
-
-                  setIsCropEditorOpen(true);
-                }}
-                onEditCrop={() => setIsCropEditorOpen(true)}
-              />
-            </Box>
-          </Fade>
+        <Box sx={{ flex: { xs: "1 1 auto", lg: "0 0 58%" }, minHeight: 480 }}>
+          <QuestionsAccordionPanel
+            questions={questions}
+            pages={pages}
+            expandedId={expandedId}
+            onExpandedChange={setExpandedId}
+            onQuestionChange={handleQuestionChange}
+            onSaveAll={handleSaveAll}
+            isSaving={isSaving}
+          />
         </Box>
       </Box>
     </Container>
