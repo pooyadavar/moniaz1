@@ -7,38 +7,39 @@ import { hasMathMarkup } from "../utils/parseMathSegments";
 type Props = Omit<TextFieldProps, "value" | "onChange"> & {
   value: string;
   onChange: (value: string) => void;
+  isEditMode?: boolean;
 };
 
-const MathTextField: React.FC<Props> = ({ value, onChange, helperText, ...rest }) => {
+const MathTextField: React.FC<Props> = ({ value, onChange, helperText, isEditMode = false, ...rest }) => {
   const defaultHelper =
-    "فرمول‌ها را با $...$ بنویسید — مثال: $\\sqrt{2}$ یا $\\frac{a}{b}$ یا $x^2+3x$";
+    // "فرمول‌ها را با $...$ بنویسید — مثال: $\\sqrt{2}$ یا $\\frac{a}{b}$ یا $x^2+3x$";
+    "";
 
   return (
     <Box>
-      {/* <TextField
-        {...rest}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        // helperText={helperText ?? defaultHelper}
-        slotProps={{
-          input: {
-            sx: { fontFamily: "'Vazirmatn', 'IRANSans', monospace", fontSize: "0.95rem" },
-          },
-        }}
-      /> */}
-
-      {value.trim() && (
+      {isEditMode ? (
+        <TextField
+          {...rest}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          helperText={helperText ?? defaultHelper}
+          slotProps={{
+            input: {
+              sx: { fontFamily: "'Vazirmatn', 'IRANSans', monospace", fontSize: "0.75rem", direction: "rtl" },
+            },
+          }}
+        />
+      ) : (
         <Box
           sx={{
-            mt: 1,
             p: 1.5,
             borderRadius: "8px",
             bgcolor: "#f8fafc",
             border: "1px solid #e2e8f0",
           }}
         >
-          <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.75 }}>
-            {hasMathMarkup(value) ? "پیش‌نمایش (با فرمول)" : "پیش‌نمایش متن"}
+          <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.75, fontWeight: 700 }}>
+            {rest.label ? `${rest.label} ${hasMathMarkup(value) ? "(با فرمول)" : ""}` : (hasMathMarkup(value) ? "پیش‌نمایش (با فرمول)" : "پیش‌نمایش متن")}
           </Typography>
           <MathText content={value} />
         </Box>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -9,6 +9,7 @@ import {
   MenuItem,
   TextField,
   Typography,
+  Switch,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
@@ -45,6 +46,18 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
   onSaveAll,
   isSaving,
 }) => {
+  const [editModes, setEditModes] = useState<Record<string, { question: boolean; options: boolean }>>({});
+
+  const toggleEditMode = (id: string, field: 'question' | 'options') => {
+    setEditModes(prev => ({
+      ...prev,
+      [id]: {
+        ...prev[id],
+        [field]: !(prev[id]?.[field] ?? false)
+      }
+    }));
+  };
+
   if (questions.length === 0) {
     return (
       <Box className="moniaz-card" sx={{ p: 4, minHeight: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -138,13 +151,25 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
               </AccordionSummary>
 
               <AccordionDetails sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, bgcolor: "#fff" }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main" }}>صورت سوال</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" color="text.secondary">حالت ویرایش</Typography>
+                    <Switch
+                      size="small"
+                      checked={editModes[question.id]?.question ?? false}
+                      onChange={() => toggleEditMode(question.id, 'question')}
+                    />
+                  </Box>
+                </Box>
                 <MathTextField
-                  label="صورت سوال"
+                  label=" "
                   multiline
                   minRows={2}
                   value={question.questionText}
                   onChange={(value) => onQuestionChange(question.id, (c) => ({ ...c, questionText: value }))}
                   fullWidth
+                  isEditMode={editModes[question.id]?.question ?? false}
                 />
 
                 {question.hasQuestionImage && (
@@ -176,12 +201,23 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                   </Box>
                 )}
 
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main" }}>گزینه‌ها</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" color="text.secondary">حالت ویرایش گزینه‌ها</Typography>
+                    <Switch
+                      size="small"
+                      checked={editModes[question.id]?.options ?? false}
+                      onChange={() => toggleEditMode(question.id, 'options')}
+                    />
+                  </Box>
+                </Box>
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                   {question.options.map((option, optionIndex) => (
                     <Box key={optionIndex}>
                       {option.type === "image" ? (
                         <Box sx={{ p: 1.5, borderRadius: "8px", bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                          <Typography sx={{ fontWeight: 700, fontSize: "0.85rem", mb: 1 }}>
+                          <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", mb: 1 }}>
                             گزینه {optionIndex + 1} (تصویری)
                           </Typography>
                           {question.optionCroppedUrls[optionIndex] ? (
@@ -191,7 +227,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                               style={{ width: "100%", maxHeight: 96, objectFit: "contain", marginBottom: 8, borderRadius: 4 }}
                             />
                           ) : (
-                            <Typography sx={{ color: "warning.dark", fontSize: "0.8rem", mb: 1 }}>برش گزینه را تأیید کنید.</Typography>
+                            <Typography sx={{ color: "warning.dark", fontSize: "0.75rem", mb: 1 }}>برش گزینه را تأیید کنید.</Typography>
                           )}
                           <Button
                             size="small"
@@ -219,6 +255,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                           }
                           fullWidth
                           minRows={1}
+                          isEditMode={editModes[question.id]?.options ?? false}
                         />
                       )}
                     </Box>
@@ -236,11 +273,11 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                     }))
                   }
                   fullWidth
-                  helperText={
-                    question.correctOption
-                      ? "از پاسخنامه / حباب پر شده تشخیص داده شد"
-                      : "پاسخ درست از پاسخنامه تشخیص داده نشد — دستی انتخاب کنید"
-                  }
+                  // helperText={
+                  //   question.correctOption
+                  //     ? "از پاسخنامه / حباب پر شده تشخیص داده شد"
+                  //     : "پاسخ درست از پاسخنامه تشخیص داده نشد — دستی انتخاب کنید"
+                  // }
                 >
                   <MenuItem value="">
                     <em>انتخاب کنید</em>

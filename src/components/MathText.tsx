@@ -32,7 +32,8 @@ const MathText: React.FC<Props> = ({ content, className }) => {
       sx={{
         lineHeight: 1.85,
         wordBreak: "break-word",
-        "& .katex": { fontSize: "1.08em" },
+        fontSize: "0.95rem", // Base font size for the text content
+        "& .katex": { fontSize: "0.9em" }, // Adjust KaTeX font size relative to the base
         "& .katex-display": { margin: "0.5em 0" },
       }}
     >
@@ -68,3 +69,5 @@ const MathText: React.FC<Props> = ({ content, className }) => {
 };
 
 export default MathText;
+
+
