@@ -43,7 +43,7 @@ const GeminiResultForm: React.FC<Props> = ({
   useEffect(() => {
     setQuestionText(extractedData?.questionText || '');
     setOptions([0, 1, 2, 3].map((index) => extractedData?.options?.[index] || ''));
-    setCorrectOption(extractedData?.correctOption || 1);
+    setCorrectOption((extractedData?.correctOption ?? 0) + 1);
   }, [extractedData]);
 
   const handleSave = () => {
@@ -51,7 +51,7 @@ const GeminiResultForm: React.FC<Props> = ({
       ...extractedData,
       questionText,
       options,
-      correctOption,
+      correctOption: correctOption - 1,
       hasQuestionImage,
       questionImageCrop: hasQuestionImage ? extractedData?.questionImageCrop || null : null
     });

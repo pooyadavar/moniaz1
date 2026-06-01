@@ -115,6 +115,11 @@ const QuestionUploadPage: React.FC = () => {
 
   const handleSaveAll = async () => {
     for (const q of questions) {
+      if (!q.correctOption || q.correctOption < 1 || q.correctOption > 4) {
+        alert("گزینه صحیح مشخص نیست — از پاسخنامه یا دستی انتخاب کنید.");
+        setExpandedId(q.id);
+        return;
+      }
       if (q.hasQuestionImage && !q.questionCroppedUrl) {
         alert("برش تصویر صورت سوال را تکمیل کنید.");
         setExpandedId(q.id);

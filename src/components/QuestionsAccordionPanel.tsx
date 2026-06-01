@@ -14,9 +14,9 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import ImageIcon from "@mui/icons-material/Image";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
-import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
 import type { PagePreview, QuestionDraft } from "../types/question";
 import ImageCropperBox from "./ImageCropperBox";
+import MathTextField from "./MathTextField";
 import { expandCropWithPadding } from "../utils/cropPadding";
 import type { Crop } from "react-image-crop";
 
@@ -138,12 +138,12 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
               </AccordionSummary>
 
               <AccordionDetails sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, bgcolor: "#fff" }}>
-                <TextField
+                <MathTextField
                   label="صورت سوال"
                   multiline
                   minRows={2}
                   value={question.questionText}
-                  onChange={(e) => onQuestionChange(question.id, (c) => ({ ...c, questionText: e.target.value }))}
+                  onChange={(value) => onQuestionChange(question.id, (c) => ({ ...c, questionText: value }))}
                   fullWidth
                 />
 
@@ -207,17 +207,18 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                           </Button>
                         </Box>
                       ) : (
-                        <TextField
+                        <MathTextField
                           label={`گزینه ${optionIndex + 1}`}
                           value={option.text}
-                          onChange={(e) =>
+                          onChange={(value) =>
                             onQuestionChange(question.id, (c) => {
                               const opts = [...c.options];
-                              opts[optionIndex] = { ...opts[optionIndex], text: e.target.value };
+                              opts[optionIndex] = { ...opts[optionIndex], text: value };
                               return { ...c, options: opts };
                             })
                           }
                           fullWidth
+                          minRows={1}
                         />
                       )}
                     </Box>
@@ -227,12 +228,27 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                 <TextField
                   select
                   label="گزینه صحیح"
-                  value={question.correctOption}
-                  onChange={(e) => onQuestionChange(question.id, (c) => ({ ...c, correctOption: Number(e.target.value) }))}
+                  value={question.correctOption ?? ""}
+                  onChange={(e) =>
+                    onQuestionChange(question.id, (c) => ({
+                      ...c,
+                      correctOption: e.target.value === "" ? null : Number(e.target.value),
+                    }))
+                  }
                   fullWidth
+                  helperText={
+                    question.correctOption
+                      ? "از پاسخنامه / حباب پر شده تشخیص داده شد"
+                      : "پاسخ درست از پاسخنامه تشخیص داده نشد — دستی انتخاب کنید"
+                  }
                 >
+                  <MenuItem value="">
+                    <em>انتخاب کنید</em>
+                  </MenuItem>
                   {[1, 2, 3, 4].map((n) => (
-                    <MenuItem key={n} value={n}>گزینه {n}</MenuItem>
+                    <MenuItem key={n} value={n}>
+                      گزینه {n}
+                    </MenuItem>
                   ))}
                 </TextField>
 

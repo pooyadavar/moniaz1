@@ -14,7 +14,7 @@ export interface ExtractedOption {
 export interface ExtractedQuestion {
   questionText: string;
   options: ExtractedOption[];
-  correctOption: number;
+  correctOption: number | null;
   hasQuestionImage: boolean;
   questionImageCrop?: ImageCropPercent | null;
   pageIndex: number;
