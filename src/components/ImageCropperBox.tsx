@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Box, Button, Typography } from '@mui/material';
@@ -8,12 +8,18 @@ import ContentCutIcon from '@mui/icons-material/ContentCut';
 interface Props {
   imageSrc: string;
   onCropSave: (croppedImage: string) => void;
+  initialCrop?: Crop | null;
 }
 
-const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave }) => {
+const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave, initialCrop }) => {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const imageRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    setCrop(initialCrop || undefined);
+    setCompletedCrop(undefined);
+  }, [initialCrop, imageSrc]);
 
   const handleSave = () => {
     if (!completedCrop || !imageRef.current) return;
@@ -57,7 +63,7 @@ const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave }) => {
       </Box>
 
       <Typography sx={{ color: 'gray.main', fontSize: '0.95rem' }}>
-        اگر سوال شامل تصویری است که باید ذخیره شود، آن بخش را انتخاب و کراپ کنید.
+        اگر جمینای بخش تصویری سوال را اشتباه تشخیص داده، محدوده درست را انتخاب و ذخیره کنید.
       </Typography>
 
       <Box sx={{ 

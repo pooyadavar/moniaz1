@@ -1,17 +1,62 @@
-import React from 'react';
-import { Box, Button, TextField, Typography, MenuItem, Chip } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Box, Button, Chip, MenuItem, Switch, TextField, Typography } from '@mui/material';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import EditNoteRoundedIcon from '@mui/icons-material/EditNoteRounded';
 
 import ImageIcon from '@mui/icons-material/Image';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 
-interface Props {
-  extractedData: any;
-  onSave: (data: any) => void;
-  croppedImageUrl?: string | null;
+interface ExtractedData {
+  questionText?: string;
+  options?: string[];
+  correctOption?: number;
+  hasQuestionImage?: boolean;
+  questionImageCrop?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null;
 }
 
-const GeminiResultForm: React.FC<Props> = ({ extractedData, onSave, croppedImageUrl }) => {
+interface Props {
+  extractedData: ExtractedData | null;
+  onSave: (data: ExtractedData) => void;
+  croppedImageUrl?: string | null;
+  hasQuestionImage: boolean;
+  onHasQuestionImageChange: (hasImage: boolean) => void;
+  onEditCrop: () => void;
+}
+
+const GeminiResultForm: React.FC<Props> = ({
+  extractedData,
+  onSave,
+  croppedImageUrl,
+  hasQuestionImage,
+  onHasQuestionImageChange,
+  onEditCrop
+}) => {
+  const [questionText, setQuestionText] = useState('');
+  const [options, setOptions] = useState(['', '', '', '']);
+  const [correctOption, setCorrectOption] = useState(1);
+
+  useEffect(() => {
+    setQuestionText(extractedData?.questionText || '');
+    setOptions([0, 1, 2, 3].map((index) => extractedData?.options?.[index] || ''));
+    setCorrectOption(extractedData?.correctOption || 1);
+  }, [extractedData]);
+
+  const handleSave = () => {
+    onSave({
+      ...extractedData,
+      questionText,
+      options,
+      correctOption,
+      hasQuestionImage,
+      questionImageCrop: hasQuestionImage ? extractedData?.questionImageCrop || null : null
+    });
+  };
+
   return (
     <Box className="glass" sx={{
       p: { xs: 3, md: 4 },
@@ -60,7 +105,8 @@ const GeminiResultForm: React.FC<Props> = ({ extractedData, onSave, croppedImage
           label="صورت سوال"
           multiline
           rows={3}
-          defaultValue={extractedData?.questionText || ''}
+          value={questionText}
+          onChange={(event) => setQuestionText(event.target.value)}
           variant="outlined"
           fullWidth
           slotProps={{ input: { sx: { fontSize: '1.1rem', lineHeight: 1.6 } } }}
@@ -71,7 +117,12 @@ const GeminiResultForm: React.FC<Props> = ({ extractedData, onSave, croppedImage
              <TextField
                 key={index}
                 label={opt}
-                defaultValue={extractedData?.options?.[index] || ''}
+                value={options[index]}
+                onChange={(event) => {
+                  const nextOptions = [...options];
+                  nextOptions[index] = event.target.value;
+                  setOptions(nextOptions);
+                }}
                 variant="outlined"
                 fullWidth
               />
@@ -81,7 +132,8 @@ const GeminiResultForm: React.FC<Props> = ({ extractedData, onSave, croppedImage
         <TextField
           select
           label="گزینه صحیح"
-          defaultValue={extractedData?.correctOption || 1}
+          value={correctOption}
+          onChange={(event) => setCorrectOption(Number(event.target.value))}
           fullWidth
         >
           {[1, 2, 3, 4].map((option) => (
@@ -93,17 +145,45 @@ const GeminiResultForm: React.FC<Props> = ({ extractedData, onSave, croppedImage
             </MenuItem>
           ))}
         </TextField>
+
+        <Box sx={{ p: 2, background: 'rgba(0,0,0,0.18)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <ImageIcon sx={{ color: hasQuestionImage ? '#ec4899' : '#9ca3af', fontSize: '1.25rem' }} />
+            <Box>
+              <Typography sx={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
+                صورت سوال عکس دارد؟
+              </Typography>
+              <Typography sx={{ color: '#9ca3af', fontSize: '0.82rem' }}>
+                {hasQuestionImage ? 'تصویر جداگانه همراه سوال ذخیره می‌شود.' : 'فیلد تصویر در دیتابیس null می‌ماند.'}
+              </Typography>
+            </Box>
+          </Box>
+          <Switch
+            checked={hasQuestionImage}
+            onChange={(event) => onHasQuestionImageChange(event.target.checked)}
+          />
+        </Box>
       </Box>
 
-      {croppedImageUrl && (
-        <Box sx={{ mt: 2, p: 2, background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 1.5, zIndex: 1 }}>
+      {hasQuestionImage && (
+        <Box sx={{ mt: 2, p: 2, background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 1.5, zIndex: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ImageIcon sx={{ color: '#ec4899', fontSize: '1.2rem' }} />
             <Typography sx={{ fontWeight: 600, color: '#fff', fontSize: '0.95rem' }}>تصویر برش خورده سوال</Typography>
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', p: 1 }}>
-            <img src={croppedImageUrl} alt="Cropped" style={{ maxHeight: '150px', objectFit: 'contain', borderRadius: '4px' }} />
-          </Box>
+          {croppedImageUrl ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', p: 1 }}>
+              <img src={croppedImageUrl} alt="Cropped" style={{ maxHeight: '150px', objectFit: 'contain', borderRadius: '4px' }} />
+            </Box>
+          ) : (
+            <Typography sx={{ color: '#fbbf24', fontSize: '0.9rem' }}>
+              هنوز برشی برای تصویر سوال ذخیره نشده است.
+            </Typography>
+          )}
+          <Button variant="outlined" onClick={onEditCrop} sx={{ alignSelf: 'flex-start' }}>
+            <TuneRoundedIcon sx={{ ml: 1, fontSize: '1.1rem' }} />
+            ویرایش برش
+          </Button>
         </Box>
       )}
 
@@ -111,7 +191,7 @@ const GeminiResultForm: React.FC<Props> = ({ extractedData, onSave, croppedImage
         <Button
           fullWidth
           variant="contained"
-          onClick={() => onSave(extractedData)}
+          onClick={handleSave}
           sx={{ 
             borderRadius: "100px", 
             py: 1.8, 
