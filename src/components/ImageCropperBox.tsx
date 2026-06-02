@@ -27,10 +27,19 @@ const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave, initialCrop })
     const image = imageRef.current;
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    canvas.width = completedCrop.width;
-    canvas.height = completedCrop.height;
+    
+    const destWidth = completedCrop.width * scaleX;
+    const destHeight = completedCrop.height * scaleY;
+
+    canvas.width = destWidth;
+    canvas.height = destHeight;
+    
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    
+    // Better interpolation for scaling
+    ctx.imageSmoothingQuality = 'high';
+
     ctx.drawImage(
       image,
       completedCrop.x * scaleX,
@@ -39,10 +48,10 @@ const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave, initialCrop })
       completedCrop.height * scaleY,
       0,
       0,
-      completedCrop.width,
-      completedCrop.height,
+      destWidth,
+      destHeight,
     );
-    onCropSave(canvas.toDataURL('image/jpeg'));
+    onCropSave(canvas.toDataURL('image/png'));
   };
 
   return (

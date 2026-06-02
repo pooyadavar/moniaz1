@@ -30,6 +30,8 @@ export const cropImageFromPercent = (
         return;
       }
 
+      ctx.imageSmoothingQuality = 'high';
+
       ctx.drawImage(
         image,
         sourceX,
@@ -42,7 +44,7 @@ export const cropImageFromPercent = (
         canvas.height,
       );
 
-      resolve(canvas.toDataURL("image/jpeg"));
+      resolve(canvas.toDataURL("image/png"));
     };
     image.onerror = () => reject(new Error("Image could not be loaded for cropping."));
     image.src = imageSrc;

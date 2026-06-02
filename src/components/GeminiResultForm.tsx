@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Chip, MenuItem, Switch, TextField, Typography } from '@mui/material';
+import { Box, Button, Chip, MenuItem, Switch, FormControl, InputLabel, Select, Typography } from '@mui/material';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import EditNoteRoundedIcon from '@mui/icons-material/EditNoteRounded';
+import MathTextField from './MathTextField';
 
 import ImageIcon from '@mui/icons-material/Image';
 import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
@@ -101,50 +102,53 @@ const GeminiResultForm: React.FC<Props> = ({
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, zIndex: 1, flexGrow: 1 }}>
-        <TextField
+        <MathTextField
           label="صورت سوال"
           multiline
-          rows={3}
+          minRows={3}
           value={questionText}
-          onChange={(event) => setQuestionText(event.target.value)}
+          onChange={(value) => setQuestionText(value)}
           variant="outlined"
           fullWidth
           slotProps={{ input: { sx: { fontSize: '1.1rem', lineHeight: 1.6 } } }}
+          isEditMode={true}
         />
 
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
           {['گزینه ۱', 'گزینه ۲', 'گزینه ۳', 'گزینه ۴'].map((opt, index) => (
-             <TextField
+             <MathTextField
                 key={index}
                 label={opt}
                 value={options[index]}
-                onChange={(event) => {
+                onChange={(value) => {
                   const nextOptions = [...options];
-                  nextOptions[index] = event.target.value;
+                  nextOptions[index] = value;
                   setOptions(nextOptions);
                 }}
                 variant="outlined"
                 fullWidth
+                isEditMode={true}
               />
           ))}
         </Box>
 
-        <TextField
-          select
-          label="گزینه صحیح"
-          value={correctOption}
-          onChange={(event) => setCorrectOption(Number(event.target.value))}
-          fullWidth
-        >
-          {[1, 2, 3, 4].map((option) => (
-            <MenuItem key={option} value={option}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10b981' }} />
-                گزینه {option}
-              </Box>
-            </MenuItem>
-          ))}
-        </TextField>
+        <FormControl fullWidth>
+          <InputLabel>گزینه صحیح</InputLabel>
+          <Select
+            label="گزینه صحیح"
+            value={correctOption}
+            onChange={(event) => setCorrectOption(Number(event.target.value))}
+          >
+            {[1, 2, 3, 4].map((option) => (
+              <MenuItem key={option} value={option}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10b981' }} />
+                  گزینه {option}
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         <Box sx={{ p: 2, background: 'rgba(0,0,0,0.18)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

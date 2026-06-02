@@ -13,7 +13,7 @@ const MoniazHeader: React.FC = () => (
       }}
     >
       <Container maxWidth="xl">
-        <Typography sx={{ textAlign: "center" }}>
+        <Typography  sx={{ textAlign: "center" , fontSize: "0.65rem", fontWeight: 500 }}>
           پنل استخراج سوال — زیرمجموعه نشر آنلاین مُـنیاز
         </Typography>
       </Container>

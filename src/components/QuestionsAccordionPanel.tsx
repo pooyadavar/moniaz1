@@ -7,7 +7,9 @@ import {
   Button,
   Chip,
   MenuItem,
-  TextField,
+  FormControl,
+  InputLabel,
+  Select,
   Typography,
   Switch,
 } from "@mui/material";
@@ -18,6 +20,7 @@ import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import type { PagePreview, QuestionDraft } from "../types/question";
 import ImageCropperBox from "./ImageCropperBox";
 import MathTextField from "./MathTextField";
+import MathText from "./MathText";
 import { expandCropWithPadding } from "../utils/cropPadding";
 import type { Crop } from "react-image-crop";
 
@@ -61,8 +64,8 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
   if (questions.length === 0) {
     return (
       <Box className="moniaz-card" sx={{ p: 4, minHeight: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Typography sx={{ color: "text.secondary", textAlign: "center", maxWidth: 360 }}>
-          فایل‌ها را آپلود کنید و استخراج را بزنید. هر سوال در یک آکاردئون جدا نمایش داده می‌شود.
+        <Typography sx={{ color: "text.secondary", textAlign: "center", maxWidth: 360 , fontSize: "0.85rem" }}>
+          فایل‌ها را آپلود کنید و استخراج را بزنید. هر سوال  جدا نمایش داده می‌شود
         </Typography>
       </Box>
     );
@@ -133,20 +136,22 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                       color: isExpanded ? "#fff" : "primary.main",
                     }}
                   />
-                  <Typography
+                  <Box
                     sx={{
-                      fontWeight: 400,
+                      fontWeight: 900,
                       color: isExpanded ? "#fff" : "text.primary",
                       overflow: "hidden",
-                      fontSize: "0.85rem",
+                      fontSize: "1.4rem",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                       flex: 1,
                       minWidth: 80,
+                      "& .katex-display": { display: "inline-block", m: 0 },
+                      "& > span": { display: "inline" }
                     }}
                   >
-                    {summary}
-                  </Typography>
+                    <MathText content={summary} fontSize="0.75rem" fontFamily="'Vazirmatn', 'IRANSans', sans-serif" />
+                  </Box>
                 </Box>
               </AccordionSummary>
 
@@ -262,32 +267,28 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                   ))}
                 </Box>
 
-                <TextField
-                  select
-                  label="گزینه صحیح"
-                  value={question.correctOption ?? ""}
-                  onChange={(e) =>
-                    onQuestionChange(question.id, (c) => ({
-                      ...c,
-                      correctOption: e.target.value === "" ? null : Number(e.target.value),
-                    }))
-                  }
-                  fullWidth
-                  // helperText={
-                  //   question.correctOption
-                  //     ? "از پاسخنامه / حباب پر شده تشخیص داده شد"
-                  //     : "پاسخ درست از پاسخنامه تشخیص داده نشد — دستی انتخاب کنید"
-                  // }
-                >
-                  <MenuItem value="">
-                    <em>انتخاب کنید</em>
-                  </MenuItem>
-                  {[1, 2, 3, 4].map((n) => (
-                    <MenuItem key={n} value={n}>
-                      گزینه {n}
+                <FormControl fullWidth>
+                  <InputLabel>گزینه صحیح</InputLabel>
+                  <Select
+                    label="گزینه صحیح"
+                    value={question.correctOption ?? ""}
+                    onChange={(e) =>
+                      onQuestionChange(question.id, (c) => ({
+                        ...c,
+                        correctOption: String(e.target.value) === "" ? null : Number(e.target.value),
+                      }))
+                    }
+                  >
+                    <MenuItem value="">
+                      <em>انتخاب کنید</em>
                     </MenuItem>
-                  ))}
-                </TextField>
+                    {[1, 2, 3, 4].map((n) => (
+                      <MenuItem key={n} value={n}>
+                        گزینه {n}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
                 {page && cropEditor !== false && (
                   <ImageCropperBox

@@ -32,7 +32,7 @@ const MathTextField: React.FC<Props> = ({ value, onChange, helperText, isEditMod
       ) : (
         <Box
           sx={{
-            p: 1.5,
+            p: 1,
             borderRadius: "8px",
             bgcolor: "#f8fafc",
             border: "1px solid #e2e8f0",
@@ -41,7 +41,7 @@ const MathTextField: React.FC<Props> = ({ value, onChange, helperText, isEditMod
           <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 0.75, fontWeight: 700 }}>
             {rest.label ? `${rest.label} ${hasMathMarkup(value) ? "(با فرمول)" : ""}` : (hasMathMarkup(value) ? "پیش‌نمایش (با فرمول)" : "پیش‌نمایش متن")}
           </Typography>
-          <MathText content={value} />
+          <MathText content={value} fontSize="0.8rem" />
         </Box>
       )}
     </Box>

@@ -19,9 +19,11 @@ const renderLatex = (latex: string, displayMode: boolean): string => {
 interface Props {
   content: string;
   className?: string;
+  fontSize?: string | number;
+  fontFamily?: string;
 }
 
-const MathText: React.FC<Props> = ({ content, className }) => {
+const MathText: React.FC<Props> = ({ content, className, fontSize = "inherit", fontFamily = "inherit" }) => {
   const segments = parseMathSegments(content);
 
   return (
@@ -30,11 +32,12 @@ const MathText: React.FC<Props> = ({ content, className }) => {
       className={className}
       dir="auto"
       sx={{
-        lineHeight: 1.85,
+        lineHeight: 1.6,
         wordBreak: "break-word",
-        fontSize: "0.95rem", // Base font size for the text content
+        fontSize: fontSize, // Base font size for the text content
+        fontFamily: fontFamily,
         "& .katex": { fontSize: "0.9em" }, // Adjust KaTeX font size relative to the base
-        "& .katex-display": { margin: "0.5em 0" },
+        "& .katex-display": { margin: "0.25em 0" },
       }}
     >
       {segments.map((segment, index) => {
@@ -47,7 +50,8 @@ const MathText: React.FC<Props> = ({ content, className }) => {
             <Box
               key={index}
               component="span"
-              sx={{ display: "block", textAlign: "center", my: 0.5 }}
+              dir="ltr"
+              sx={{ display: "block", textAlign: "center", my: 0.5, unicodeBidi: 'isolate' }}
               dangerouslySetInnerHTML={{
                 __html: renderLatex(segment.content, true),
               }}
@@ -56,8 +60,11 @@ const MathText: React.FC<Props> = ({ content, className }) => {
         }
 
         return (
-          <span
+          <Box
+            component="span"
             key={index}
+            dir="ltr"
+            sx={{ display: 'inline-block', unicodeBidi: 'isolate' }}
             dangerouslySetInnerHTML={{
               __html: renderLatex(segment.content, false),
             }}

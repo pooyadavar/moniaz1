@@ -2,7 +2,11 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import MediaDropzone from "../components/MediaDropzone";
 import QuestionsAccordionPanel from "../components/QuestionsAccordionPanel";
-import type { ExtractedQuestion, PagePreview, QuestionDraft } from "../types/question";
+import type {
+  ExtractedQuestion,
+  PagePreview,
+  QuestionDraft,
+} from "../types/question";
 import { cropImageFromPercent } from "../utils/cropImage";
 import { filesToPages, revokePageUrls } from "../utils/mediaToPages";
 
@@ -21,13 +25,19 @@ const buildQuestionDraft = async (
   const optionCroppedUrls: (string | null)[] = [null, null, null, null];
 
   if (extracted.hasQuestionImage && extracted.questionImageCrop) {
-    questionCroppedUrl = await cropImageFromPercent(pagePreviewUrl, extracted.questionImageCrop);
+    questionCroppedUrl = await cropImageFromPercent(
+      pagePreviewUrl,
+      extracted.questionImageCrop,
+    );
   }
 
   await Promise.all(
     extracted.options.map(async (option, index) => {
       if (option.type === "image" && option.imageCrop) {
-        optionCroppedUrls[index] = await cropImageFromPercent(pagePreviewUrl, option.imageCrop);
+        optionCroppedUrls[index] = await cropImageFromPercent(
+          pagePreviewUrl,
+          option.imageCrop,
+        );
       }
     }),
   );
@@ -69,7 +79,9 @@ const QuestionUploadPage: React.FC = () => {
 
     try {
       const formData = new FormData();
-      pages.forEach((page) => formData.append("files", page.file, page.file.name));
+      pages.forEach((page) =>
+        formData.append("files", page.file, page.file.name),
+      );
 
       const response = await fetch(`${API_BASE_URL}/api/questions/extract`, {
         method: "POST",
@@ -82,7 +94,8 @@ const QuestionUploadPage: React.FC = () => {
         return;
       }
 
-      const extractedList = (result.data?.questions || []) as ExtractedQuestion[];
+      const extractedList = (result.data?.questions ||
+        []) as ExtractedQuestion[];
       if (!extractedList.length) {
         alert("سوالی پیدا نشد.");
         return;
@@ -100,7 +113,9 @@ const QuestionUploadPage: React.FC = () => {
       setExpandedId(drafts[0]?.id ?? false);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : "ارتباط با سرور برقرار نشد!");
+      alert(
+        error instanceof Error ? error.message : "ارتباط با سرور برقرار نشد!",
+      );
     } finally {
       setIsExtracting(false);
     }
@@ -108,7 +123,9 @@ const QuestionUploadPage: React.FC = () => {
 
   const handleQuestionChange = useCallback(
     (id: string, updater: (q: QuestionDraft) => QuestionDraft) => {
-      setQuestions((cur) => cur.map((item) => (item.id === id ? updater(item) : item)));
+      setQuestions((cur) =>
+        cur.map((item) => (item.id === id ? updater(item) : item)),
+      );
     },
     [],
   );
@@ -125,7 +142,9 @@ const QuestionUploadPage: React.FC = () => {
         setExpandedId(q.id);
         return;
       }
-      if (q.options.some((o, i) => o.type === "image" && !q.optionCroppedUrls[i])) {
+      if (
+        q.options.some((o, i) => o.type === "image" && !q.optionCroppedUrls[i])
+      ) {
         alert("برش گزینه تصویری را تکمیل کنید.");
         setExpandedId(q.id);
         return;
@@ -141,17 +160,23 @@ const QuestionUploadPage: React.FC = () => {
           questions: questions.map((q) => ({
             questionText: q.questionText,
             options: q.options.map((o) =>
-              o.type === "image" ? { type: "image", text: o.text } : { type: "text", text: o.text },
+              o.type === "image"
+                ? { type: "image", text: o.text }
+                : { type: "text", text: o.text },
             ),
             correctOption: q.correctOption,
             hasQuestionImage: q.hasQuestionImage,
             questionImage: q.hasQuestionImage ? q.questionCroppedUrl : null,
-            optionImages: q.options.map((o, i) => (o.type === "image" ? q.optionCroppedUrls[i] : null)),
+            optionImages: q.options.map((o, i) =>
+              o.type === "image" ? q.optionCroppedUrls[i] : null,
+            ),
           })),
         }),
       });
       const result = await response.json();
-      alert(result.success ? result.message || "ذخیره شد." : "خطا: " + result.error);
+      alert(
+        result.success ? result.message || "ذخیره شد." : "خطا: " + result.error,
+      );
     } catch {
       alert("خطا در ذخیره");
     } finally {
@@ -162,12 +187,25 @@ const QuestionUploadPage: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
       <Box sx={{ textAlign: "center", mb: 4 }}>
-        <Typography variant="h5" component="h3" sx={{ fontWeight: 600, color: "text.primary", mb: 1.5 }}>
+        <Typography
+          variant="h6"
+          component="h3"
+          sx={{ fontWeight: 600, color: "text.primary", mb: 1.5 }}
+        >
           افزودن سوال با هوش مصنوعی
         </Typography>
-        <Typography sx={{ color: "text.secondary", maxWidth: 640, mx: "auto", fontSize: "0.75rem", lineHeight: 1.8 }}>
-          عکس یا PDF آپلود کنید. تشخیص تصویر صورت سوال و گزینه‌ها خودکار است و هر سوال در یک
-          آکاردئون جدا نمایش داده می‌شود.
+        <Typography
+          sx={{
+            color: "text.secondary",
+            maxWidth: 640,
+            mx: "auto",
+            fontSize: "0.65rem",
+            lineHeight: 1.8,
+            direction: "rtl",
+          }}
+        >
+          عکس یا PDF آپلود کنید. تشخیص تصویر صورت سوال و گزینه‌ها خودکار است و
+          هر سوال را می‌توانید ویرایش کنید. در نهایت با ذخیره، سوالات به دیتابیس اضافه می‌شوند و برای استفاده در آزمون‌ها آماده خواهند بود.
         </Typography>
       </Box>
 
@@ -176,7 +214,7 @@ const QuestionUploadPage: React.FC = () => {
           display: "flex",
           flexDirection: { xs: "column", lg: "row" },
           gap: 4,
-          alignItems: "stretch",
+          alignItems: "flex-start",
         }}
       >
         <Box sx={{ flex: { xs: "1 1 auto", lg: "0 0 42%" } }}>

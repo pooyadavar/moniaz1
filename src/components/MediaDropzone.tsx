@@ -14,7 +14,12 @@ interface Props {
   isLoading: boolean;
 }
 
-const MediaDropzone: React.FC<Props> = ({ pages, onFilesSelect, onExtract, isLoading }) => {
+const MediaDropzone: React.FC<Props> = ({
+  pages,
+  onFilesSelect,
+  onExtract,
+  isLoading,
+}) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
@@ -27,7 +32,17 @@ const MediaDropzone: React.FC<Props> = ({ pages, onFilesSelect, onExtract, isLoa
   });
 
   return (
-    <Box className="moniaz-card" sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5, height: "100%" , direction: "rtl"}}>
+    <Box
+      className="moniaz-card"
+      sx={{
+        p: 3,
+        display: "flex",
+        flexDirection: "column",
+        gap: 2.5,
+        height: "100%",
+        direction: "rtl",
+      }}
+    >
       <Typography variant="h6" sx={{ fontWeight: 500, color: "text.primary" }}>
         آپلود فایل
       </Typography>
@@ -37,28 +52,56 @@ const MediaDropzone: React.FC<Props> = ({ pages, onFilesSelect, onExtract, isLoa
         sx={{
           flexGrow: 1,
           minHeight: 300,
-          borderRadius: "10px",
+          borderRadius: "12px",
           border: "2px dashed",
           borderColor: isDragActive ? "primary.main" : "#c5d5e4",
-          bgcolor: isDragActive ? "rgba(0, 123, 255, 0.05)" : "#f8fbfd",
+          bgcolor: isDragActive ? "rgba(0, 123, 255, 0.08)" : "#f8fbfd",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          transition: "border-color 0.2s, background 0.2s",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          "@keyframes float": {
+            "0%": { transform: "translateY(0px)" },
+            "50%": { transform: "translateY(-8px)" },
+            "100%": { transform: "translateY(0px)" },
+          },
           "&:hover": {
             borderColor: "primary.main",
             bgcolor: "rgba(0, 123, 255, 0.04)",
+            transform: "translateY(-4px)",
+            boxShadow: "0 12px 24px -8px rgba(0, 123, 255, 0.2)",
+            "& .upload-icon-container": {
+              animation: "float 2s ease-in-out infinite",
+              bgcolor: "rgba(0, 123, 255, 0.15)",
+            },
+            "& .upload-icon": {
+              transform: "scale(1.1)",
+            },
           },
         }}
       >
         <input {...getInputProps()} />
         {pages.length > 0 ? (
           <Box sx={{ width: "100%", p: 2 }}>
-            <Typography sx={{ fontWeight: 700, textAlign: "center", mb: 2, color: "text.primary" }}>
+            <Typography
+              sx={{
+                fontWeight: 700,
+                textAlign: "center",
+                mb: 2,
+                color: "text.primary",
+              }}
+            >
               {pages.length} صفحه آماده استخراج
             </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, justifyContent: "center" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 1.5,
+                justifyContent: "center",
+              }}
+            >
               {pages.map((page) => (
                 <Box
                   key={page.index}
@@ -68,9 +111,15 @@ const MediaDropzone: React.FC<Props> = ({ pages, onFilesSelect, onExtract, isLoa
                     overflow: "hidden",
                     border: "1px solid",
                     borderColor: "primary.light",
+                    transition: "transform 0.2s",
+                    "&:hover": { transform: "scale(1.05)" },
                   }}
                 >
-                  <img src={page.previewUrl} alt={page.label} style={{ width: "100%", height: 68, objectFit: "cover" }} />
+                  <img
+                    src={page.previewUrl}
+                    alt={page.label}
+                    style={{ width: "100%", height: 68, objectFit: "cover" }}
+                  />
                   <Typography
                     sx={{
                       fontSize: "0.62rem",
@@ -88,36 +137,78 @@ const MediaDropzone: React.FC<Props> = ({ pages, onFilesSelect, onExtract, isLoa
                 </Box>
               ))}
             </Box>
-            <Typography sx={{ textAlign: "center", mt: 2, fontSize: "0.85rem", color: "text.secondary" }}>
+            <Typography
+              sx={{
+                textAlign: "center",
+                mt: 2,
+                fontSize: "0.85rem",
+                color: "text.secondary",
+              }}
+            >
               برای تغییر فایل‌ها کلیک کنید
             </Typography>
           </Box>
         ) : (
           <Box sx={{ textAlign: "center", p: 3 }}>
             <Box
+              className="upload-icon-container"
               sx={{
                 width: 72,
                 height: 72,
                 mx: "auto",
                 mb: 2,
                 borderRadius: "50%",
-                bgcolor: "rgba(0, 123, 255, 0.1)",
+                bgcolor: "rgba(0, 123, 255, 0.08)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                transition: "all 0.3s ease",
               }}
             >
-              <CloudUploadRoundedIcon sx={{ fontSize: 36, color: "primary.main" }} />
+              <CloudUploadRoundedIcon
+                className="upload-icon"
+                sx={{
+                  fontSize: 36,
+                  color: "primary.main",
+                  transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                }}
+              />
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, mb: 1, color: "text.primary" }}
+            >
               {isDragActive ? "فایل‌ها را رها کنید" : "آپلود عکس یا PDF"}
             </Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: "0.9rem", mb: 2 }}>
+            <Typography
+              sx={{ color: "text.secondary", fontSize: "0.9rem", mb: 2 }}
+            >
               چند عکس یا PDF چندصفحه‌ای — هر صفحه جدا تحلیل می‌شود
             </Typography>
-            <Box sx={{ display: "flex", gap: 1, justifyContent: "center", flexWrap: "wrap" }}>
-              <Chip icon={<ImageIcon />} label="تصویر" size="small" color="primary" variant="outlined" />
-              <Chip icon={<PictureAsPdfRoundedIcon />} label="PDF" size="small" color="primary" variant="outlined" />
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                justifyContent: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <Chip
+                icon={<ImageIcon />}
+                label="تصویر"
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ px: 1 }}
+              />
+              <Chip
+                icon={<PictureAsPdfRoundedIcon />}
+                label="PDF"
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ px: 1 }}
+              />
             </Box>
           </Box>
         )}
@@ -133,7 +224,11 @@ const MediaDropzone: React.FC<Props> = ({ pages, onFilesSelect, onExtract, isLoa
           onExtract();
         }}
       >
-        {isLoading ? <CircularProgress size={22} sx={{ color: "#fff", ml: 1 }} /> : <AutoAwesomeIcon sx={{ ml: 1 }} />}
+        {isLoading ? (
+          <CircularProgress size={22} sx={{ color: "#fff", ml: 1 }} />
+        ) : (
+          <AutoAwesomeIcon sx={{ ml: 1 }} />
+        )}
         {isLoading ? "در حال تحلیل..." : "استخراج هوشمند سوالات"}
       </Button>
     </Box>
