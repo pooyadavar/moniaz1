@@ -29,12 +29,17 @@ interface Props {
   pages: PagePreview[];
   expandedId: string | false;
   onExpandedChange: (id: string | false) => void;
-  onQuestionChange: (id: string, updater: (question: QuestionDraft) => QuestionDraft) => void;
+  onQuestionChange: (
+    id: string,
+    updater: (question: QuestionDraft) => QuestionDraft,
+  ) => void;
   onSaveAll: () => void;
   isSaving: boolean;
 }
 
-const toReactCrop = (crop?: { x: number; y: number; width: number; height: number } | null): Crop | null => {
+const toReactCrop = (
+  crop?: { x: number; y: number; width: number; height: number } | null,
+): Crop | null => {
   if (!crop) return null;
   const p = expandCropWithPadding(crop);
   return { unit: "%", x: p.x, y: p.y, width: p.width, height: p.height };
@@ -49,44 +54,100 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
   onSaveAll,
   isSaving,
 }) => {
-  const [editModes, setEditModes] = useState<Record<string, { question: boolean; options: boolean }>>({});
+  const [editModes, setEditModes] = useState<
+    Record<string, { question: boolean; options: boolean }>
+  >({});
 
-  const toggleEditMode = (id: string, field: 'question' | 'options') => {
-    setEditModes(prev => ({
+  const toggleEditMode = (id: string, field: "question" | "options") => {
+    setEditModes((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
-        [field]: !(prev[id]?.[field] ?? false)
-      }
+        [field]: !(prev[id]?.[field] ?? false),
+      },
     }));
   };
 
   if (questions.length === 0) {
     return (
-      <Box className="moniaz-card" sx={{ p: 4, minHeight: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Typography sx={{ color: "text.secondary", textAlign: "center", maxWidth: 360 , fontSize: "0.85rem" }}>
-          فایل‌ها را آپلود کنید و استخراج را بزنید. هر سوال  جدا نمایش داده می‌شود
+      <Box
+        className="moniaz-card"
+        sx={{
+          p: 4,
+          minHeight: 400,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography
+          sx={{
+            color: "text.secondary",
+            textAlign: "center",
+            maxWidth: 360,
+            fontSize: "0.85rem",
+          }}
+        >
+          فایل‌ها را آپلود کنید و استخراج را بزنید. هر سوال جدا نمایش داده
+          می‌شود
         </Typography>
       </Box>
     );
   }
 
   return (
-    <Box className="moniaz-card" sx={{ p: { xs: 2, md: 3 }, display: "flex", flexDirection: "column", gap: 2, height: "100%" , direction:"rtl" }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+    <Box
+      className="moniaz-card"
+      sx={{
+        p: { xs: 2, md: 3 },
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        height: "100%",
+        direction: "rtl",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 2,
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 500 }}>
             {questions.length} سوال استخراج شد
           </Typography>
         </Box>
-        <Chip label="نیازمند بررسی" size="small" color="warning" variant="outlined" />
+        <Chip
+          label="نیازمند بررسی"
+          size="small"
+          color="warning"
+          variant="outlined"
+        />
       </Box>
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75, flexGrow: 1, overflowY: "auto", maxHeight: { lg: "2000vh" },direction:"rtl" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.75,
+          flexGrow: 1,
+          overflowY: "auto",
+          maxHeight: { lg: "2000vh" },
+          direction: "rtl",
+        }}
+      >
         {questions.map((question, questionIndex) => {
-          const page = pages.find((p) => p.index === question.pageIndex) ?? pages[question.pageIndex];
+          const page =
+            pages.find((p) => p.index === question.pageIndex) ??
+            pages[question.pageIndex];
           const isExpanded = expandedId === question.id;
-          const summary = question.questionText.trim().slice(0, 72) || `سوال ${questionIndex + 1}`;
+          const summary =
+            question.questionText.trim().slice(0, 72) ||
+            `سوال ${questionIndex + 1}`;
           const cropEditor = question.cropEditorOpen;
           const cropSource =
             cropEditor === "question"
@@ -94,6 +155,13 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
               : typeof cropEditor === "number"
                 ? question.options[cropEditor]?.imageCrop
                 : null;
+
+          // حل مشکل تایپ‌اسکریپت با کست کردن اجباری به عنوان string جهت استفاده از startsWith
+          const effectiveQuestionImage =
+            typeof question.questionImageCrop === "string" &&
+            (question.questionImageCrop as string).startsWith("data:image")
+              ? (question.questionImageCrop as string)
+              : question.questionCroppedUrl;
 
           return (
             <Accordion
@@ -110,20 +178,34 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
               }}
             >
               <AccordionSummary
-                expandIcon={<ExpandMoreIcon sx={{ color: isExpanded ? "#fff" : "primary.main" }} />}
+                expandIcon={
+                  <ExpandMoreIcon
+                    sx={{ color: isExpanded ? "#fff" : "primary.main" }}
+                  />
+                }
                 sx={{
                   bgcolor: isExpanded ? "primary.main" : "#f4f8fc",
                   minHeight: 52,
                   "& .MuiAccordionSummary-content": { my: 1 },
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, flexWrap: "wrap" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    minWidth: 0,
+                    flexWrap: "wrap",
+                  }}
+                >
                   <Chip
                     label={`${questionIndex + 1}`}
                     size="small"
                     sx={{
                       fontWeight: 700,
-                      bgcolor: isExpanded ? "rgba(255,255,255,0.25)" : "rgba(0,123,255,0.12)",
+                      bgcolor: isExpanded
+                        ? "rgba(255,255,255,0.25)"
+                        : "rgba(0,123,255,0.12)",
                       color: isExpanded ? "#fff" : "primary.dark",
                     }}
                   />
@@ -132,7 +214,9 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                     size="small"
                     variant="outlined"
                     sx={{
-                      borderColor: isExpanded ? "rgba(255,255,255,0.5)" : "primary.light",
+                      borderColor: isExpanded
+                        ? "rgba(255,255,255,0.5)"
+                        : "primary.light",
                       color: isExpanded ? "#fff" : "primary.main",
                     }}
                   />
@@ -147,23 +231,48 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                       flex: 1,
                       minWidth: 80,
                       "& .katex-display": { display: "inline-block", m: 0 },
-                      "& > span": { display: "inline" }
+                      "& > span": { display: "inline" },
                     }}
                   >
-                    <MathText content={summary} fontSize="0.75rem" fontFamily="'Vazirmatn', 'IRANSans', sans-serif" />
+                    <MathText
+                      content={summary}
+                      fontSize="0.75rem"
+                      fontFamily="'Vazirmatn', 'IRANSans', sans-serif"
+                    />
                   </Box>
                 </Box>
               </AccordionSummary>
 
-              <AccordionDetails sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2, bgcolor: "#fff" }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main" }}>صورت سوال</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="caption" color="text.secondary">حالت ویرایش</Typography>
+              <AccordionDetails
+                sx={{
+                  p: 2.5,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  bgcolor: "#fff",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 700, color: "primary.main" }}
+                  >
+                    صورت سوال
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      حالت ویرایش
+                    </Typography>
                     <Switch
                       size="small"
                       checked={editModes[question.id]?.question ?? false}
-                      onChange={() => toggleEditMode(question.id, 'question')}
+                      onChange={() => toggleEditMode(question.id, "question")}
                     />
                   </Box>
                 </Box>
@@ -172,23 +281,62 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                   multiline
                   minRows={2}
                   value={question.questionText}
-                  onChange={(value) => onQuestionChange(question.id, (c) => ({ ...c, questionText: value }))}
+                  onChange={(value) =>
+                    onQuestionChange(question.id, (c) => ({
+                      ...c,
+                      questionText: value,
+                    }))
+                  }
                   fullWidth
                   isEditMode={editModes[question.id]?.question ?? false}
                 />
 
                 {question.hasQuestionImage && (
-                  <Box sx={{ p: 2, borderRadius: "8px", bgcolor: "#f0f7ff", border: "1px solid #c5ddf5" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                      <ImageIcon sx={{ color: "primary.main", fontSize: "1.1rem" }} />
-                      <Typography sx={{ fontWeight: 700, fontSize: "0.9rem" }}>تصویر صورت سوال</Typography>
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderRadius: "8px",
+                      bgcolor: "#f0f7ff",
+                      border: "1px solid #c5ddf5",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1,
+                      }}
+                    >
+                      <ImageIcon
+                        sx={{ color: "primary.main", fontSize: "1.1rem" }}
+                      />
+                      <Typography sx={{ fontWeight: 700, fontSize: "0.9rem" }}>
+                        تصویر صورت سوال
+                      </Typography>
                     </Box>
-                    {question.questionCroppedUrl ? (
+                    {effectiveQuestionImage ? (
                       <Box sx={{ textAlign: "center", mb: 1 }}>
-                        <img src={question.questionCroppedUrl} alt="" style={{ maxHeight: 140, objectFit: "contain", borderRadius: 6 }} />
+                        <img
+                          src={effectiveQuestionImage}
+                          alt="باکس سوال"
+                          style={{
+                            maxHeight: 240,
+                            objectFit: "contain",
+                            borderRadius: 6,
+                          }}
+                        />
                       </Box>
                     ) : (
-                      <Typography sx={{ color: "warning.dark", fontSize: "0.85rem", mb: 1 }}>محدوده برش را تأیید کنید.</Typography>
+                      <Typography
+                        sx={{
+                          color: "warning.dark",
+                          fontSize: "0.85rem",
+                          mb: 1,
+                        }}
+                      >
+                        محدوده برش را تأیید کنید.
+                      </Typography>
                     )}
                     <Button
                       size="small"
@@ -196,75 +344,146 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                       onClick={() =>
                         onQuestionChange(question.id, (c) => ({
                           ...c,
-                          cropEditorOpen: c.cropEditorOpen === "question" ? false : "question",
+                          cropEditorOpen:
+                            c.cropEditorOpen === "question"
+                              ? false
+                              : "question",
                         }))
                       }
                     >
                       <TuneRoundedIcon sx={{ ml: 0.5, fontSize: "1rem" }} />
-                      {question.cropEditorOpen === "question" ? "بستن برش" : "ویرایش برش"}
+                      {question.cropEditorOpen === "question"
+                        ? "بستن برش"
+                        : "ویرایش برش"}
                     </Button>
                   </Box>
                 )}
 
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main" }}>گزینه‌ها</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="caption" color="text.secondary">حالت ویرایش گزینه‌ها</Typography>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    mt: 1,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 700, color: "primary.main" }}
+                  >
+                    گزینه‌ها
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      حالت ویرایش گزینه‌ها
+                    </Typography>
                     <Switch
                       size="small"
                       checked={editModes[question.id]?.options ?? false}
-                      onChange={() => toggleEditMode(question.id, 'options')}
+                      onChange={() => toggleEditMode(question.id, "options")}
                     />
                   </Box>
                 </Box>
-                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-                  {question.options.map((option, optionIndex) => (
-                    <Box key={optionIndex}>
-                      {option.type === "image" ? (
-                        <Box sx={{ p: 1.5, borderRadius: "8px", bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }}>
-                          <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", mb: 1 }}>
-                            گزینه {optionIndex + 1} (تصویری)
-                          </Typography>
-                          {question.optionCroppedUrls[optionIndex] ? (
-                            <img
-                              src={question.optionCroppedUrls[optionIndex]!}
-                              alt=""
-                              style={{ width: "100%", maxHeight: 96, objectFit: "contain", marginBottom: 8, borderRadius: 4 }}
-                            />
-                          ) : (
-                            <Typography sx={{ color: "warning.dark", fontSize: "0.75rem", mb: 1 }}>برش گزینه را تأیید کنید.</Typography>
-                          )}
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() =>
-                              onQuestionChange(question.id, (c) => ({
-                                ...c,
-                                cropEditorOpen: c.cropEditorOpen === optionIndex ? false : optionIndex,
-                              }))
-                            }
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                    gap: 2,
+                  }}
+                >
+                  {question.options.map((option, optionIndex) => {
+                    const rawOptionCrop =
+                      question.optionCroppedUrls[optionIndex];
+                    // اینجا هم کست کِردیم تا تایپ‌اسکریپت برای گزینه‌ها هم گیر ندهد
+                    const effectiveOptionImage =
+                      typeof option.text === "string" &&
+                      (option.text as string).startsWith("data:image")
+                        ? (option.text as string)
+                        : rawOptionCrop;
+
+                    return (
+                      <Box key={optionIndex}>
+                        {option.type === "image" ? (
+                          <Box
+                            sx={{
+                              p: 1.5,
+                              borderRadius: "8px",
+                              bgcolor: "#f8fafc",
+                              border: "1px solid #e2e8f0",
+                            }}
                           >
-                            ویرایش برش
-                          </Button>
-                        </Box>
-                      ) : (
-                        <MathTextField
-                          label={`گزینه ${optionIndex + 1}`}
-                          value={option.text}
-                          onChange={(value) =>
-                            onQuestionChange(question.id, (c) => {
-                              const opts = [...c.options];
-                              opts[optionIndex] = { ...opts[optionIndex], text: value };
-                              return { ...c, options: opts };
-                            })
-                          }
-                          fullWidth
-                          minRows={1}
-                          isEditMode={editModes[question.id]?.options ?? false}
-                        />
-                      )}
-                    </Box>
-                  ))}
+                            <Typography
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: "0.75rem",
+                                mb: 1,
+                              }}
+                            >
+                              گزینه {optionIndex + 1} (تصویری)
+                            </Typography>
+                            {effectiveOptionImage ? (
+                              <img
+                                src={effectiveOptionImage}
+                                alt=""
+                                style={{
+                                  width: "100%",
+                                  maxHeight: 120,
+                                  objectFit: "contain",
+                                  marginBottom: 8,
+                                  borderRadius: 4,
+                                }}
+                              />
+                            ) : (
+                              <Typography
+                                sx={{
+                                  color: "warning.dark",
+                                  fontSize: "0.75rem",
+                                  mb: 1,
+                                }}
+                              >
+                                برش گزینه را تأیید کنید.
+                              </Typography>
+                            )}
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() =>
+                                onQuestionChange(question.id, (c) => ({
+                                  ...c,
+                                  cropEditorOpen:
+                                    c.cropEditorOpen === optionIndex
+                                      ? false
+                                      : optionIndex,
+                                }))
+                              }
+                            >
+                              ویرایش برش
+                            </Button>
+                          </Box>
+                        ) : (
+                          <MathTextField
+                            label={`گزینه ${optionIndex + 1}`}
+                            value={option.text}
+                            onChange={(value) =>
+                              onQuestionChange(question.id, (c) => {
+                                const opts = [...c.options];
+                                opts[optionIndex] = {
+                                  ...opts[optionIndex],
+                                  text: value,
+                                };
+                                return { ...c, options: opts };
+                              })
+                            }
+                            fullWidth
+                            minRows={1}
+                            isEditMode={
+                              editModes[question.id]?.options ?? false
+                            }
+                          />
+                        )}
+                      </Box>
+                    );
+                  })}
                 </Box>
 
                 <FormControl fullWidth>
@@ -275,7 +494,10 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                     onChange={(e) =>
                       onQuestionChange(question.id, (c) => ({
                         ...c,
-                        correctOption: String(e.target.value) === "" ? null : Number(e.target.value),
+                        correctOption:
+                          String(e.target.value) === ""
+                            ? null
+                            : Number(e.target.value),
                       }))
                     }
                   >
@@ -297,12 +519,20 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                     onCropSave={(cropped) => {
                       onQuestionChange(question.id, (c) => {
                         if (cropEditor === "question") {
-                          return { ...c, questionCroppedUrl: cropped, cropEditorOpen: false };
+                          return {
+                            ...c,
+                            questionCroppedUrl: cropped,
+                            cropEditorOpen: false,
+                          };
                         }
                         if (typeof cropEditor === "number") {
                           const urls = [...c.optionCroppedUrls];
                           urls[cropEditor] = cropped;
-                          return { ...c, optionCroppedUrls: urls, cropEditorOpen: false };
+                          return {
+                            ...c,
+                            optionCroppedUrls: urls,
+                            cropEditorOpen: false,
+                          };
                         }
                         return c;
                       });
@@ -324,7 +554,9 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
         onClick={onSaveAll}
       >
         <SaveRoundedIcon sx={{ ml: 1 }} />
-        {isSaving ? "در حال ذخیره..." : `ذخیره ${questions.length} سوال در دیتابیس`}
+        {isSaving
+          ? "در حال ذخیره..."
+          : `ذخیره ${questions.length} سوال در دیتابیس`}
       </Button>
     </Box>
   );
