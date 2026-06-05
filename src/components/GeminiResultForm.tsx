@@ -184,10 +184,10 @@ const GeminiResultForm: React.FC<Props> = ({
               هنوز برشی برای تصویر سوال ذخیره نشده است.
             </Typography>
           )}
-          <Button variant="outlined" onClick={onEditCrop} sx={{ alignSelf: 'flex-start' }}>
+          {/* <Button variant="outlined" onClick={onEditCrop} sx={{ alignSelf: 'flex-start' }}>
             <TuneRoundedIcon sx={{ ml: 1, fontSize: '1.1rem' }} />
             ویرایش برش
-          </Button>
+          </Button> */}
         </Box>
       )}
 

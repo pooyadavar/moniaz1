@@ -338,7 +338,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                         محدوده برش را تأیید کنید.
                       </Typography>
                     )}
-                    <Button
+                    {/* <Button
                       size="small"
                       variant="outlined"
                       onClick={() =>
@@ -355,7 +355,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                       {question.cropEditorOpen === "question"
                         ? "بستن برش"
                         : "ویرایش برش"}
-                    </Button>
+                    </Button> */}
                   </Box>
                 )}
 
@@ -444,7 +444,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                                 برش گزینه را تأیید کنید.
                               </Typography>
                             )}
-                            <Button
+                            {/* <Button
                               size="small"
                               variant="outlined"
                               onClick={() =>
@@ -458,7 +458,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                               }
                             >
                               ویرایش برش
-                            </Button>
+                            </Button> */}
                           </Box>
                         ) : (
                           <MathTextField
