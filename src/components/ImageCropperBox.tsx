@@ -1,13 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
+import ReactCrop, {
+  type Crop,
+  type PixelCrop,
+  convertToPercentCrop,
+  convertToPixelCrop,
+} from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Box, Button, Typography } from '@mui/material';
 import CropIcon from '@mui/icons-material/Crop';
 import ContentCutIcon from '@mui/icons-material/ContentCut';
+import type { ImageCropPercent } from '../types/question';
 
 interface Props {
   imageSrc: string;
-  onCropSave: (croppedImage: string) => void;
+  onCropSave: (croppedImage: string, cropPercent: ImageCropPercent | null) => void;
   initialCrop?: Crop | null;
 }
 
@@ -21,23 +27,32 @@ const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave, initialCrop })
     setCompletedCrop(undefined);
   }, [initialCrop, imageSrc]);
 
+  const syncPixelCrop = (nextCrop?: Crop) => {
+    const image = imageRef.current;
+    if (!image || !nextCrop || !image.width || !image.height) return;
+    setCompletedCrop(convertToPixelCrop(nextCrop, image.width, image.height));
+  };
+
+  const handleImageLoad = () => {
+    syncPixelCrop(crop ?? initialCrop ?? undefined);
+  };
+
   const handleSave = () => {
     if (!completedCrop || !imageRef.current) return;
     const canvas = document.createElement('canvas');
     const image = imageRef.current;
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    
+
     const destWidth = completedCrop.width * scaleX;
     const destHeight = completedCrop.height * scaleY;
 
     canvas.width = destWidth;
     canvas.height = destHeight;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
-    // Better interpolation for scaling
+
     ctx.imageSmoothingQuality = 'high';
 
     ctx.drawImage(
@@ -51,7 +66,14 @@ const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave, initialCrop })
       destWidth,
       destHeight,
     );
-    onCropSave(canvas.toDataURL('image/png'));
+
+    const percentCrop = convertToPercentCrop(completedCrop, image.width, image.height);
+    onCropSave(canvas.toDataURL('image/png'), {
+      x: percentCrop.x,
+      y: percentCrop.y,
+      width: percentCrop.width,
+      height: percentCrop.height,
+    });
   };
 
   return (
@@ -71,8 +93,21 @@ const ImageCropperBox: React.FC<Props> = ({ imageSrc, onCropSave, initialCrop })
           border: '1px solid #d0dde8',
         }}
       >
-        <ReactCrop crop={crop} onChange={(_, p) => setCrop(p)} onComplete={(c) => setCompletedCrop(c)}>
-          <img ref={imageRef} src={imageSrc} alt="" style={{ maxHeight: 400, objectFit: 'contain' }} />
+        <ReactCrop
+          crop={crop}
+          onChange={(pixelCrop, percentCrop) => {
+            setCrop(percentCrop);
+            setCompletedCrop(pixelCrop);
+          }}
+          onComplete={(pixelCrop) => setCompletedCrop(pixelCrop)}
+        >
+          <img
+            ref={imageRef}
+            src={imageSrc}
+            alt=""
+            onLoad={handleImageLoad}
+            style={{ maxHeight: 400, objectFit: 'contain', display: 'block' }}
+          />
         </ReactCrop>
       </Box>
       <Button

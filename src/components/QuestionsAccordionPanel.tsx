@@ -156,12 +156,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                 ? question.options[cropEditor]?.imageCrop
                 : null;
 
-          // حل مشکل تایپ‌اسکریپت با کست کردن اجباری به عنوان string جهت استفاده از startsWith
-          const effectiveQuestionImage =
-            typeof question.questionImageCrop === "string" &&
-            (question.questionImageCrop as string).startsWith("data:image")
-              ? (question.questionImageCrop as string)
-              : question.questionCroppedUrl;
+          const effectiveQuestionImage = question.questionCroppedUrl;
 
           return (
             <Accordion
@@ -338,7 +333,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                         محدوده برش را تأیید کنید.
                       </Typography>
                     )}
-                    {/* <Button
+                    <Button
                       size="small"
                       variant="outlined"
                       onClick={() =>
@@ -355,7 +350,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                       {question.cropEditorOpen === "question"
                         ? "بستن برش"
                         : "ویرایش برش"}
-                    </Button> */}
+                    </Button>
                   </Box>
                 )}
 
@@ -394,12 +389,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                   {question.options.map((option, optionIndex) => {
                     const rawOptionCrop =
                       question.optionCroppedUrls[optionIndex];
-                    // اینجا هم کست کِردیم تا تایپ‌اسکریپت برای گزینه‌ها هم گیر ندهد
-                    const effectiveOptionImage =
-                      typeof option.text === "string" &&
-                      (option.text as string).startsWith("data:image")
-                        ? (option.text as string)
-                        : rawOptionCrop;
+                    const effectiveOptionImage = rawOptionCrop;
 
                     return (
                       <Box key={optionIndex}>
@@ -444,7 +434,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                                 برش گزینه را تأیید کنید.
                               </Typography>
                             )}
-                            {/* <Button
+                            <Button
                               size="small"
                               variant="outlined"
                               onClick={() =>
@@ -457,8 +447,11 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                                 }))
                               }
                             >
-                              ویرایش برش
-                            </Button> */}
+                              <TuneRoundedIcon sx={{ ml: 0.5, fontSize: "1rem" }} />
+                              {question.cropEditorOpen === optionIndex
+                                ? "بستن برش"
+                                : "ویرایش برش"}
+                            </Button>
                           </Box>
                         ) : (
                           <MathTextField
@@ -516,21 +509,28 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                   <ImageCropperBox
                     imageSrc={page.previewUrl}
                     initialCrop={toReactCrop(cropSource)}
-                    onCropSave={(cropped) => {
+                    onCropSave={(cropped, cropPercent) => {
                       onQuestionChange(question.id, (c) => {
                         if (cropEditor === "question") {
                           return {
                             ...c,
                             questionCroppedUrl: cropped,
+                            questionImageCrop: cropPercent ?? c.questionImageCrop,
                             cropEditorOpen: false,
                           };
                         }
                         if (typeof cropEditor === "number") {
                           const urls = [...c.optionCroppedUrls];
+                          const opts = [...c.options];
                           urls[cropEditor] = cropped;
+                          opts[cropEditor] = {
+                            ...opts[cropEditor],
+                            imageCrop: cropPercent ?? opts[cropEditor].imageCrop,
+                          };
                           return {
                             ...c,
                             optionCroppedUrls: urls,
+                            options: opts,
                             cropEditorOpen: false,
                           };
                         }

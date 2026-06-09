@@ -27,8 +27,9 @@ export interface PagePreview {
   label: string;
 }
 
-export interface QuestionDraft extends ExtractedQuestion {
+export interface QuestionDraft extends Omit<ExtractedQuestion, "questionImageCrop"> {
   id: string;
+  questionImageCrop: ImageCropPercent | null;
   questionCroppedUrl: string | null;
   optionCroppedUrls: (string | null)[];
   cropEditorOpen: false | "question" | number;

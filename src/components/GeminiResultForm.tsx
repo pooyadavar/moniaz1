@@ -5,7 +5,6 @@ import EditNoteRoundedIcon from '@mui/icons-material/EditNoteRounded';
 import MathTextField from './MathTextField';
 
 import ImageIcon from '@mui/icons-material/Image';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 
 interface ExtractedData {
   questionText?: string;
@@ -35,7 +34,7 @@ const GeminiResultForm: React.FC<Props> = ({
   croppedImageUrl,
   hasQuestionImage,
   onHasQuestionImageChange,
-  onEditCrop
+  onEditCrop: _onEditCrop,
 }) => {
   const [questionText, setQuestionText] = useState('');
   const [options, setOptions] = useState(['', '', '', '']);

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
+import toast from "react-hot-toast";
 import MediaDropzone from "../components/MediaDropzone";
 import QuestionsAccordionPanel from "../components/QuestionsAccordionPanel";
 import type {
@@ -7,7 +8,7 @@ import type {
   PagePreview,
   QuestionDraft,
 } from "../types/question";
-import { cropImageFromPercent } from "../utils/cropImage";
+import { resolveImageCrop } from "../utils/resolveImageCrop";
 import { filesToPages, revokePageUrls } from "../utils/mediaToPages";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -21,30 +22,35 @@ const buildQuestionDraft = async (
   extracted: ExtractedQuestion,
   pagePreviewUrl: string,
 ): Promise<QuestionDraft> => {
+  let questionImageCrop = null;
   let questionCroppedUrl: string | null = null;
   const optionCroppedUrls: (string | null)[] = [null, null, null, null];
+  const options = [...extracted.options];
 
   if (extracted.hasQuestionImage && extracted.questionImageCrop) {
-    questionCroppedUrl = await cropImageFromPercent(
+    const resolved = await resolveImageCrop(
       pagePreviewUrl,
-      extracted.questionImageCrop,
+      extracted.questionImageCrop as Parameters<typeof resolveImageCrop>[1],
     );
+    questionImageCrop = resolved.percent;
+    questionCroppedUrl = resolved.preview;
   }
 
   await Promise.all(
-    extracted.options.map(async (option, index) => {
+    options.map(async (option, index) => {
       if (option.type === "image" && option.imageCrop) {
-        optionCroppedUrls[index] = await cropImageFromPercent(
-          pagePreviewUrl,
-          option.imageCrop,
-        );
+        const resolved = await resolveImageCrop(pagePreviewUrl, option.imageCrop);
+        optionCroppedUrls[index] = resolved.preview;
+        options[index] = { ...option, imageCrop: resolved.percent };
       }
     }),
   );
 
   return {
     ...extracted,
+    options,
     id: createId(),
+    questionImageCrop,
     questionCroppedUrl,
     optionCroppedUrls,
     cropEditorOpen: false,
@@ -67,7 +73,7 @@ const QuestionUploadPage: React.FC = () => {
     try {
       setPages(await filesToPages(files));
     } catch (error) {
-      alert(error instanceof Error ? error.message : "خطا در پردازش فایل‌ها");
+      toast.error(error instanceof Error ? error.message : "خطا در پردازش فایل‌ها");
     }
   };
 
@@ -90,14 +96,14 @@ const QuestionUploadPage: React.FC = () => {
       const result = await response.json();
 
       if (!result.success) {
-        alert("خطا در استخراج: " + (result.error || "نامشخص"));
+        toast.error("خطا در استخراج: " + (result.error || "نامشخص"));
         return;
       }
 
       const extractedList = (result.data?.questions ||
         []) as ExtractedQuestion[];
       if (!extractedList.length) {
-        alert("سوالی پیدا نشد.");
+        toast.error("سوالی پیدا نشد.");
         return;
       }
 
@@ -113,7 +119,7 @@ const QuestionUploadPage: React.FC = () => {
       setExpandedId(drafts[0]?.id ?? false);
     } catch (error) {
       console.error(error);
-      alert(
+      toast.error(
         error instanceof Error ? error.message : "ارتباط با سرور برقرار نشد!",
       );
     } finally {
@@ -133,19 +139,19 @@ const QuestionUploadPage: React.FC = () => {
   const handleSaveAll = async () => {
     for (const q of questions) {
       if (!q.correctOption || q.correctOption < 1 || q.correctOption > 4) {
-        alert("گزینه صحیح مشخص نیست — از پاسخنامه یا دستی انتخاب کنید.");
+        toast.error("گزینه صحیح مشخص نیست — از پاسخنامه یا دستی انتخاب کنید.");
         setExpandedId(q.id);
         return;
       }
       if (q.hasQuestionImage && !q.questionCroppedUrl) {
-        alert("برش تصویر صورت سوال را تکمیل کنید.");
+        toast.error("برش تصویر صورت سوال را تکمیل کنید.");
         setExpandedId(q.id);
         return;
       }
       if (
         q.options.some((o, i) => o.type === "image" && !q.optionCroppedUrls[i])
       ) {
-        alert("برش گزینه تصویری را تکمیل کنید.");
+        toast.error("برش گزینه تصویری را تکمیل کنید.");
         setExpandedId(q.id);
         return;
       }
@@ -174,11 +180,13 @@ const QuestionUploadPage: React.FC = () => {
         }),
       });
       const result = await response.json();
-      alert(
-        result.success ? result.message || "ذخیره شد." : "خطا: " + result.error,
-      );
+      if (result.success) {
+        toast.success(result.message || "ذخیره شد.");
+      } else {
+        toast.error("خطا: " + result.error);
+      }
     } catch {
-      alert("خطا در ذخیره");
+      toast.error("خطا در ذخیره");
     } finally {
       setIsSaving(false);
     }
