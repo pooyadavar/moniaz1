@@ -1,10 +1,10 @@
 :root {
-  --moniaz-blue: #007bff;
-  --moniaz-blue-dark: #0056b3;
-  --moniaz-navy: #0c2d6b;
-  --moniaz-text: #1a2b42;
-  --moniaz-muted: #5c6b7a;
-  --moniaz-border: #d0dde8;
+  --moniaz-blue: #0072BC;
+  --moniaz-blue-dark: #005f9e;
+  --moniaz-navy: #171717;
+  --moniaz-text: #171717;
+  --moniaz-muted: #6b7280;
+  --moniaz-border: #e5e5e5;
   --sans: 'Vazirmatn', 'IRANSans', Tahoma, system-ui, sans-serif;
 }
 
@@ -13,8 +13,7 @@ body {
   min-height: 100vh;
   font: 16px/1.6 var(--sans);
   color: var(--moniaz-text);
-  background: linear-gradient(180deg, #e8f2fc 0%, #f8fbff 35%, #ffffff 100%);
-  background-attachment: fixed;
+  background: #ffffff;
 }
 
 #root {
@@ -27,20 +26,20 @@ body {
 .glass {
   background: #ffffff;
   border: 1px solid var(--moniaz-border);
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(12, 45, 107, 0.08);
+  border-radius: 10px;
+  box-shadow: none;
 }
 
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #eef2f6;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #b8c9d9;
+  background: #d4d4d8;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--moniaz-blue);
+  background: #a1a1aa;
 }

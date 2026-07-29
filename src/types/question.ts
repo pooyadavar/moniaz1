@@ -8,7 +8,7 @@ export interface ImageCropPercent {
 export interface ExtractedOption {
   type: "text" | "image";
   text: string;
-  imageCrop?: ImageCropPercent | null;
+  imageCrop?: ImageCropPercent | string | null;
 }
 
 export interface ExtractedQuestion {
@@ -29,16 +29,24 @@ export interface PagePreview {
 
 export interface QuestionDraft extends Omit<ExtractedQuestion, "questionImageCrop"> {
   id: string;
-  questionImageCrop: ImageCropPercent | null;
+  questionImageCrop: ImageCropPercent | string | null;
   questionCroppedUrl: string | null;
   optionCroppedUrls: (string | null)[];
   cropEditorOpen: false | "question" | number;
+}
+
+export interface AnswerKeyMeta {
+  source: "opencv" | "gemini";
+  pageIndex?: number;
+  confidence?: number;
+  answers?: number[];
 }
 
 export interface ExtractApiResponse {
   success: boolean;
   data?: {
     questions: ExtractedQuestion[];
+    answerKey?: AnswerKeyMeta;
   };
   error?: string;
 }

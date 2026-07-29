@@ -156,7 +156,12 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                 ? question.options[cropEditor]?.imageCrop
                 : null;
 
-          const effectiveQuestionImage = question.questionCroppedUrl;
+          const effectiveQuestionImage =
+            question.questionCroppedUrl ||
+            (typeof question.questionImageCrop === "string" &&
+            question.questionImageCrop.startsWith("data:image")
+              ? question.questionImageCrop
+              : null);
 
           return (
             <Accordion
@@ -387,13 +392,20 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                   }}
                 >
                   {question.options.map((option, optionIndex) => {
+                    const isImageOption =
+                      option.type === "image" || Boolean(option.imageCrop);
                     const rawOptionCrop =
                       question.optionCroppedUrls[optionIndex];
-                    const effectiveOptionImage = rawOptionCrop;
+                    const effectiveOptionImage =
+                      rawOptionCrop ||
+                      (typeof option.imageCrop === "string" &&
+                      option.imageCrop.startsWith("data:image")
+                        ? option.imageCrop
+                        : null);
 
                     return (
                       <Box key={optionIndex}>
-                        {option.type === "image" ? (
+                        {isImageOption ? (
                           <Box
                             sx={{
                               p: 1.5,
@@ -508,7 +520,7 @@ const QuestionsAccordionPanel: React.FC<Props> = ({
                 {page && cropEditor !== false && (
                   <ImageCropperBox
                     imageSrc={page.previewUrl}
-                    initialCrop={toReactCrop(cropSource)}
+                    initialCrop={typeof cropSource === "string" ? null : toReactCrop(cropSource)}
                     onCropSave={(cropped, cropPercent) => {
                       onQuestionChange(question.id, (c) => {
                         if (cropEditor === "question") {

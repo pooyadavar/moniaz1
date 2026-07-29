@@ -5,7 +5,7 @@ const MoniazHeader: React.FC = () => (
   <>
     <Box
       sx={{
-        bgcolor: "navy.main",
+        bgcolor: "#0c2d6b",
         color: "#fff",
         py: 0.75,
         fontSize: "0.4rem",
@@ -18,7 +18,7 @@ const MoniazHeader: React.FC = () => (
         </Typography>
       </Container>
     </Box>
-    <AppBar position="sticky" elevation={0} sx={{ bgcolor: "primary.main" }}>
+    <AppBar position="sticky" elevation={0} sx={{ bgcolor: "#0072BC" }}>
       <Container maxWidth="xl">
         <Toolbar sx={{ justifyContent: "space-between", minHeight: { xs: 56, md: 64 } }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -28,7 +28,7 @@ const MoniazHeader: React.FC = () => (
                 height: 40,
                 borderRadius: "50%",
                 bgcolor: "#fff",
-                color: "primary.main",
+                color: "#0072BC",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

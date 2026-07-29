@@ -1,250 +1,95 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import toast from "react-hot-toast";
+import { useAuth } from "../auth/AuthProvider";
 import MediaDropzone from "../components/MediaDropzone";
-import QuestionsAccordionPanel from "../components/QuestionsAccordionPanel";
-import type {
-  ExtractedQuestion,
-  PagePreview,
-  QuestionDraft,
-} from "../types/question";
-import { resolveImageCrop } from "../utils/resolveImageCrop";
+import type { PagePreview } from "../types/question";
+import type { CreateExtractionResponse } from "../services/api";
+import { apiRequest } from "../services/api";
 import { filesToPages, revokePageUrls } from "../utils/mediaToPages";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+interface Props {
+  onSessionCreated?: (sessionId: number) => void;
+}
 
-const createId = () => crypto.randomUUID();
-
-const getPageForQuestion = (pages: PagePreview[], pageIndex: number) =>
-  pages.find((p) => p.index === pageIndex) ?? pages[pageIndex];
-
-const buildQuestionDraft = async (
-  extracted: ExtractedQuestion,
-  pagePreviewUrl: string,
-): Promise<QuestionDraft> => {
-  let questionImageCrop = null;
-  let questionCroppedUrl: string | null = null;
-  const optionCroppedUrls: (string | null)[] = [null, null, null, null];
-  const options = [...extracted.options];
-
-  if (extracted.hasQuestionImage && extracted.questionImageCrop) {
-    const resolved = await resolveImageCrop(
-      pagePreviewUrl,
-      extracted.questionImageCrop as Parameters<typeof resolveImageCrop>[1],
-    );
-    questionImageCrop = resolved.percent;
-    questionCroppedUrl = resolved.preview;
-  }
-
-  await Promise.all(
-    options.map(async (option, index) => {
-      if (option.type === "image" && option.imageCrop) {
-        const resolved = await resolveImageCrop(pagePreviewUrl, option.imageCrop);
-        optionCroppedUrls[index] = resolved.preview;
-        options[index] = { ...option, imageCrop: resolved.percent };
-      }
-    }),
-  );
-
-  return {
-    ...extracted,
-    options,
-    id: createId(),
-    questionImageCrop,
-    questionCroppedUrl,
-    optionCroppedUrls,
-    cropEditorOpen: false,
-  };
-};
-
-const QuestionUploadPage: React.FC = () => {
+const QuestionUploadPage: React.FC<Props> = ({ onSessionCreated }) => {
+  const { token } = useAuth();
   const [pages, setPages] = useState<PagePreview[]>([]);
-  const [questions, setQuestions] = useState<QuestionDraft[]>([]);
-  const [expandedId, setExpandedId] = useState<string | false>(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => () => revokePageUrls(pages), [pages]);
 
   const handleFilesSelect = async (files: File[]) => {
     revokePageUrls(pages);
-    setQuestions([]);
-    setExpandedId(false);
+    setSelectedFile(files[0] ?? null);
     try {
-      setPages(await filesToPages(files));
+      setPages(await filesToPages(files.slice(0, 1)));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "خطا در پردازش فایل‌ها");
+      toast.error(error instanceof Error ? error.message : "خطا در پردازش فایل");
     }
   };
 
   const handleExtract = async () => {
-    if (!pages.length) return;
+    if (!selectedFile || !token) return;
     setIsExtracting(true);
-    setQuestions([]);
-    setExpandedId(false);
 
     try {
       const formData = new FormData();
-      pages.forEach((page) =>
-        formData.append("files", page.file, page.file.name),
+      formData.append("file", selectedFile, selectedFile.name);
+
+      const result = await apiRequest<CreateExtractionResponse>(
+        "/api/extractions",
+        {
+          method: "POST",
+          body: formData,
+        },
+        token,
       );
 
-      const response = await fetch(`${API_BASE_URL}/api/questions/extract`, {
-        method: "POST",
-        body: formData,
-      });
-      const result = await response.json();
-
-      if (!result.success) {
-        toast.error("خطا در استخراج: " + (result.error || "نامشخص"));
-        return;
-      }
-
-      const extractedList = (result.data?.questions ||
-        []) as ExtractedQuestion[];
-      if (!extractedList.length) {
-        toast.error("سوالی پیدا نشد.");
-        return;
-      }
-
-      const drafts = await Promise.all(
-        extractedList.map((item) => {
-          const page = getPageForQuestion(pages, item.pageIndex);
-          if (!page) throw new Error(`صفحه ${item.pageIndex + 1} یافت نشد.`);
-          return buildQuestionDraft(item, page.previewUrl);
-        }),
-      );
-
-      setQuestions(drafts);
-      setExpandedId(drafts[0]?.id ?? false);
+      toast.success("درخواست استخراج ثبت شد.");
+      onSessionCreated?.(result.sessionId);
     } catch (error) {
-      console.error(error);
-      toast.error(
-        error instanceof Error ? error.message : "ارتباط با سرور برقرار نشد!",
-      );
+      toast.error(error instanceof Error ? error.message : "ثبت درخواست انجام نشد.");
     } finally {
       setIsExtracting(false);
     }
   };
 
-  const handleQuestionChange = useCallback(
-    (id: string, updater: (q: QuestionDraft) => QuestionDraft) => {
-      setQuestions((cur) =>
-        cur.map((item) => (item.id === id ? updater(item) : item)),
-      );
-    },
-    [],
-  );
-
-  const handleSaveAll = async () => {
-    for (const q of questions) {
-      if (!q.correctOption || q.correctOption < 1 || q.correctOption > 4) {
-        toast.error("گزینه صحیح مشخص نیست — از پاسخنامه یا دستی انتخاب کنید.");
-        setExpandedId(q.id);
-        return;
-      }
-      if (q.hasQuestionImage && !q.questionCroppedUrl) {
-        toast.error("برش تصویر صورت سوال را تکمیل کنید.");
-        setExpandedId(q.id);
-        return;
-      }
-      if (
-        q.options.some((o, i) => o.type === "image" && !q.optionCroppedUrls[i])
-      ) {
-        toast.error("برش گزینه تصویری را تکمیل کنید.");
-        setExpandedId(q.id);
-        return;
-      }
-    }
-
-    setIsSaving(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/questions/save-batch`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          questions: questions.map((q) => ({
-            questionText: q.questionText,
-            options: q.options.map((o) =>
-              o.type === "image"
-                ? { type: "image", text: o.text }
-                : { type: "text", text: o.text },
-            ),
-            correctOption: q.correctOption,
-            hasQuestionImage: q.hasQuestionImage,
-            questionImage: q.hasQuestionImage ? q.questionCroppedUrl : null,
-            optionImages: q.options.map((o, i) =>
-              o.type === "image" ? q.optionCroppedUrls[i] : null,
-            ),
-          })),
-        }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        toast.success(result.message || "ذخیره شد.");
-      } else {
-        toast.error("خطا: " + result.error);
-      }
-    } catch {
-      toast.error("خطا در ذخیره");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
-      <Box sx={{ textAlign: "center", mb: 4 }}>
+    <Container maxWidth="md" sx={{ minHeight: "100svh", display: "flex", alignItems: "center", py: { xs: 3, md: 5 } }}>
+      <Box sx={{ width: "100%" }}>
+      <Box sx={{ textAlign: "center", mb: 3 }}>
         <Typography
-          variant="h6"
+          variant="h5"
           component="h3"
-          sx={{ fontWeight: 600, color: "text.primary", mb: 1.5 }}
+          sx={{ fontWeight: 750, color: "#171717", mb: 1.25 }}
         >
-          افزودن سوال با هوش مصنوعی
+          فایل سوال را بفرست
         </Typography>
         <Typography
           sx={{
             color: "text.secondary",
             maxWidth: 640,
             mx: "auto",
-            fontSize: "0.65rem",
+            fontSize: "0.78rem",
             lineHeight: 1.8,
             direction: "rtl",
           }}
         >
-          عکس یا PDF آپلود کنید. تشخیص تصویر صورت سوال و گزینه‌ها خودکار است و
-          هر سوال را می‌توانید ویرایش کنید. در نهایت با ذخیره، سوالات به دیتابیس اضافه می‌شوند و برای استفاده در آزمون‌ها آماده خواهند بود.
+          PDF یا عکس سوال را آپلود کنید. خروجی در تاریخچه ذخیره می‌شود و بعد از
+          پردازش، همان‌جا قابل ویرایش است.
         </Typography>
       </Box>
 
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", lg: "row" },
-          gap: 4,
-          alignItems: "flex-start",
-        }}
-      >
-        <Box sx={{ flex: { xs: "1 1 auto", lg: "0 0 42%" } }}>
-          <MediaDropzone
-            pages={pages}
-            onFilesSelect={handleFilesSelect}
-            onExtract={handleExtract}
-            isLoading={isExtracting}
-          />
-        </Box>
-
-        <Box sx={{ flex: { xs: "1 1 auto", lg: "0 0 58%" }, minHeight: 480 }}>
-          <QuestionsAccordionPanel
-            questions={questions}
-            pages={pages}
-            expandedId={expandedId}
-            onExpandedChange={setExpandedId}
-            onQuestionChange={handleQuestionChange}
-            onSaveAll={handleSaveAll}
-            isSaving={isSaving}
-          />
-        </Box>
+      <Box sx={{ maxWidth: 560, mx: "auto" }}>
+        <MediaDropzone
+          pages={pages}
+          onFilesSelect={handleFilesSelect}
+          onExtract={handleExtract}
+          isLoading={isExtracting}
+        />
+      </Box>
       </Box>
     </Container>
   );

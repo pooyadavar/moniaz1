@@ -22,10 +22,11 @@ const MediaDropzone: React.FC<Props> = ({
 }) => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
+      "image/png": [".png"],
+      "image/jpeg": [".jpg", ".jpeg"],
       "application/pdf": [".pdf"],
     },
-    maxFiles: 20,
+    maxFiles: 1,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) onFilesSelect(acceptedFiles);
     },
@@ -33,17 +34,19 @@ const MediaDropzone: React.FC<Props> = ({
 
   return (
     <Box
-      className="moniaz-card"
       sx={{
-        p: 3,
+        p: 1.25,
         display: "flex",
         flexDirection: "column",
-        gap: 2.5,
-        height: "100%",
+        gap: 1.5,
         direction: "rtl",
+        border: "1px solid #e5e5e5",
+        borderRadius: 3,
+        bgcolor: "#fff",
+        boxShadow: "0 18px 55px rgba(0,0,0,0.08)",
       }}
     >
-      <Typography variant="h6" sx={{ fontWeight: 500, color: "text.primary" }}>
+      <Typography sx={{ fontWeight: 700, color: "#2f2f2f", px: 1, pt: 0.5, fontSize: "0.9rem" }}>
         آپلود فایل
       </Typography>
 
@@ -51,11 +54,11 @@ const MediaDropzone: React.FC<Props> = ({
         {...getRootProps()}
         sx={{
           flexGrow: 1,
-          minHeight: 300,
-          borderRadius: "12px",
-          border: "2px dashed",
-          borderColor: isDragActive ? "primary.main" : "#c5d5e4",
-          bgcolor: isDragActive ? "rgba(0, 123, 255, 0.08)" : "#f8fbfd",
+          minHeight: 260,
+          borderRadius: 2,
+          border: "1px dashed",
+          borderColor: isDragActive ? "#0072BC" : "#d4d4d8",
+          bgcolor: isDragActive ? "rgba(0, 114, 188, 0.08)" : "#fafafa",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -67,13 +70,11 @@ const MediaDropzone: React.FC<Props> = ({
             "100%": { transform: "translateY(0px)" },
           },
           "&:hover": {
-            borderColor: "primary.main",
-            bgcolor: "rgba(0, 123, 255, 0.04)",
-            transform: "translateY(-4px)",
-            boxShadow: "0 12px 24px -8px rgba(0, 123, 255, 0.2)",
+            borderColor: "#0072BC",
+            bgcolor: "#f7f7f7",
             "& .upload-icon-container": {
               animation: "float 2s ease-in-out infinite",
-              bgcolor: "rgba(0, 123, 255, 0.15)",
+              bgcolor: "rgba(0, 114, 188, 0.14)",
             },
             "& .upload-icon": {
               transform: "scale(1.1)",
@@ -92,7 +93,7 @@ const MediaDropzone: React.FC<Props> = ({
                 color: "text.primary",
               }}
             >
-              {pages.length} صفحه آماده استخراج
+              {pages.length} صفحه پیش‌نمایش آماده است
             </Typography>
             <Box
               sx={{
@@ -158,7 +159,7 @@ const MediaDropzone: React.FC<Props> = ({
                 mx: "auto",
                 mb: 2,
                 borderRadius: "50%",
-                bgcolor: "rgba(0, 123, 255, 0.08)",
+                bgcolor: "rgba(0, 114, 188, 0.10)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -169,7 +170,7 @@ const MediaDropzone: React.FC<Props> = ({
                 className="upload-icon"
                 sx={{
                   fontSize: 36,
-                  color: "primary.main",
+                  color: "#0072BC",
                   transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 }}
               />
@@ -183,7 +184,7 @@ const MediaDropzone: React.FC<Props> = ({
             <Typography
               sx={{ color: "text.secondary", fontSize: "0.9rem", mb: 2 }}
             >
-              چند عکس یا PDF چندصفحه‌ای — هر صفحه جدا تحلیل می‌شود
+              یک PDF یا یک عکس PNG/JPG انتخاب کنید
             </Typography>
             <Box
               sx={{
@@ -197,17 +198,15 @@ const MediaDropzone: React.FC<Props> = ({
                 icon={<ImageIcon />}
                 label="تصویر"
                 size="small"
-                color="primary"
                 variant="outlined"
-                sx={{ px: 1 }}
+                sx={{ px: 1, borderColor: "#d4d4d8", color: "#3f3f46", "& .MuiChip-icon": { color: "#71717a" } }}
               />
               <Chip
                 icon={<PictureAsPdfRoundedIcon />}
                 label="PDF"
                 size="small"
-                color="primary"
                 variant="outlined"
-                sx={{ px: 1 }}
+                sx={{ px: 1, borderColor: "#d4d4d8", color: "#3f3f46", "& .MuiChip-icon": { color: "#71717a" } }}
               />
             </Box>
           </Box>
@@ -219,6 +218,12 @@ const MediaDropzone: React.FC<Props> = ({
         variant="contained"
         fullWidth
         size="large"
+        sx={{
+          bgcolor: "#0072BC",
+          borderRadius: 2,
+          py: 1.15,
+          "&:hover": { bgcolor: "#005f9e", boxShadow: "none" },
+        }}
         onClick={(e) => {
           e.stopPropagation();
           onExtract();
